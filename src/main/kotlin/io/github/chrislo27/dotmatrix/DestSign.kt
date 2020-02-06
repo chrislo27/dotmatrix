@@ -13,13 +13,14 @@ import kotlin.math.roundToInt
 
 class DestSign(val width: Int, val height: Int,
                val ledSize: Int = 3, val ledSpacing: Int = 1, val borderSize: Int = 4,
-               val ledColor: Color = ORANGE, val offColor: Color = Color.DARK_GRAY, val borderColor: Color = Color.BLACK,
+               val ledColor: Color = ORANGE, val offColor: Color = DARK_GREY, val borderColor: Color = Color.BLACK,
                val scrollTime: Float = 1.75f, val scrollAnimation: Float = 0f) {
-    
+
     companion object {
         val ORANGE: Color = Color(255, 144, 0, 255)
+        val DARK_GREY: Color = Color(64, 64, 64, 255)
     }
-    
+
     val outputWidth: Int = width * ledSize + (width - 1) * ledSpacing + borderSize * 2
     val outputHeight: Int = height * ledSize + (height - 1) * ledSpacing + borderSize * 2
     var destination: Destination? = null
@@ -43,7 +44,7 @@ class DestSign(val width: Int, val height: Int,
             g.dispose()
         }
     }
-    
+
     fun generateImageForMatrix(matrixState: BufferedImage): BufferedImage {
         return BufferedImage(outputWidth, outputHeight, BufferedImage.TYPE_4BYTE_ABGR).apply {
             val g = createGraphics()
@@ -55,7 +56,7 @@ class DestSign(val width: Int, val height: Int,
             g.dispose()
         }
     }
-    
+
     fun generateMatrixForState(state: Int): BufferedImage {
         if (state !in 0 until stateCount)
             error("State ($state) is out of bounds (max $stateCount)")
@@ -64,15 +65,15 @@ class DestSign(val width: Int, val height: Int,
         val currentDest = (if (onPr) pr else destination)!!
         return currentDest.generateMatrix(this.width, this.height, currentDest.frames[if (onPr) (state - numDestFrames) else state])
     }
-    
+
     fun generateImageForState(state: Int): BufferedImage {
         return generateImageForMatrix(generateMatrixForState(state).changeToColor(ledColor))
     }
-    
+
     fun generateImageForFrame(destination: Destination, destFrame: DestinationFrame): BufferedImage {
         return generateImageForMatrix(destination.generateMatrix(this.width, this.height, destFrame).changeToColor(ledColor))
     }
-    
+
     fun generateGif(os: OutputStream) {
         val e = AnimatedGifEncoder()
         e.start(os)
@@ -88,7 +89,7 @@ class DestSign(val width: Int, val height: Int,
             val currentFrame = currentDest.frames[index]
             StateImage(currentDest, currentFrame, generateImageForFrame(currentDest, currentFrame), currentDest.screenTimes.getOrElse(index) { scrollTime }.let { if (it <= 0f) scrollTime else it })
         }
-        val framerate = height.coerceIn(1, 20)
+        val framerate = height.coerceIn(1, 10)
         if (scrollAnimation <= 0f || stateCount == 1 || framerate <= 1) {
             for (i in 0 until stateCount) {
                 e.setDelay((stateImages[i].stateTime * 1000f).roundToInt())
@@ -113,7 +114,7 @@ class DestSign(val width: Int, val height: Int,
                 for (f in 0 until framerate) {
                     val progress = f / framerate.toFloat()
                     val yOffset = (progress * mtx.height).toInt()
-                    e.setDelay(((1000f * scrollAnimation) / framerate).roundToInt().coerceAtLeast(1))
+                    e.setDelay(((1000f * scrollAnimation) / framerate).roundToInt().coerceAtLeast(3))
                     g.composite = AlphaComposite.Clear
                     g.fillRect(0, 0, mtx.width, mtx.height)
                     g.composite = AlphaComposite.SrcOver
@@ -136,12 +137,12 @@ class DestSign(val width: Int, val height: Int,
         e.finish()
         os.close()
     }
-    
+
     fun generateGif(file: File) {
         file.createNewFile()
         generateGif(file.outputStream())
     }
-    
+
     private fun BufferedImage.changeToColor(color: Color): BufferedImage {
         for (x in 0 until width) {
             for (y in 0 until height) {
@@ -155,26 +156,26 @@ class DestSign(val width: Int, val height: Int,
         }
         return this
     }
-    
+
     private fun Image.toBufferedImage(): BufferedImage {
         if (this is BufferedImage) {
             return this
         }
         val bufferedImage = BufferedImage(this.getWidth(null), this.getHeight(null), BufferedImage.TYPE_INT_ARGB)
-        
+
         val graphics2D = bufferedImage.createGraphics()
         graphics2D.drawImage(this, 0, 0, null)
         graphics2D.dispose()
-        
+
         return bufferedImage
     }
-    
+
     data class Destination(val route: String, val routeFont: DotMtxFont,
                            val frames: List<DestinationFrame>,
                            val screenTimes: List<Float> = emptyList()) {
-        
+
         val routeGL: GlyphLayout = GlyphLayout(routeFont, route)
-        
+
         fun generateMatrix(width: Int, height: Int, frame: DestinationFrame): BufferedImage {
             return BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR).apply {
                 val g = createGraphics()
@@ -202,8 +203,8 @@ class DestSign(val width: Int, val height: Int,
             }
         }
     }
-    
+
     data class DestinationFrame(val dest1: String, val dest1Font: DotMtxFont,
                                 val dest2: String = "", val dest2Font: DotMtxFont = dest1Font)
-    
+
 }
