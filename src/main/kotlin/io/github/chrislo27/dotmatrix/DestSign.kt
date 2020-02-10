@@ -16,12 +16,12 @@ class DestSign(val width: Int, val height: Int,
                val ledColor: Color = ORANGE, val offColor: Color = DARK_GREY, val borderColor: Color = Color.BLACK,
                val scrollTime: Float = 1.75f, val scrollAnimation: AnimationType = AnimationType.NoAnimation,
                val defaultTextAlignment: TextAlignment = TextAlignment.CENTRE) {
-    
+
     companion object {
         val ORANGE: Color = Color(255, 144, 0, 255)
         val DARK_GREY: Color = Color(64, 64, 64, 255)
     }
-    
+
     val outputWidth: Int = width * ledSize + (width - 1) * ledSpacing + borderSize * 2
     val outputHeight: Int = height * ledSize + (height - 1) * ledSpacing + borderSize * 2
     var destination: Destination? = null
@@ -45,7 +45,7 @@ class DestSign(val width: Int, val height: Int,
             g.dispose()
         }
     }
-    
+
     fun generateImageForMatrix(matrixState: BufferedImage): BufferedImage {
         return BufferedImage(outputWidth, outputHeight, BufferedImage.TYPE_4BYTE_ABGR).apply {
             val g = createGraphics()
@@ -57,7 +57,7 @@ class DestSign(val width: Int, val height: Int,
             g.dispose()
         }
     }
-    
+
     fun generateMatrixForState(state: Int): BufferedImage {
         if (state !in 0 until stateCount)
             error("State ($state) is out of bounds (max $stateCount)")
@@ -66,15 +66,15 @@ class DestSign(val width: Int, val height: Int,
         val currentDest = (if (onPr) pr else destination)!!
         return currentDest.generateMatrix(this.width, this.height, currentDest.frames[if (onPr) (state - numDestFrames) else state], defaultTextAlignment)
     }
-    
+
     fun generateImageForState(state: Int): BufferedImage {
         return generateImageForMatrix(generateMatrixForState(state).changeToColor(ledColor))
     }
-    
+
     fun generateImageForFrame(destination: Destination, destFrame: DestinationFrame): BufferedImage {
         return generateImageForMatrix(destination.generateMatrix(this.width, this.height, destFrame, defaultTextAlignment).changeToColor(ledColor))
     }
-    
+
     fun generateGif(os: OutputStream) {
         val e = AnimatedGifEncoder()
         e.start(os)
@@ -153,45 +153,47 @@ class DestSign(val width: Int, val height: Int,
         e.finish()
         os.close()
     }
-    
+
     fun generateGif(file: File) {
         file.createNewFile()
         generateGif(file.outputStream())
     }
-    
+
     private fun BufferedImage.changeToColor(color: Color): BufferedImage {
-        for (x in 0 until width) {
-            for (y in 0 until height) {
-                val rgb = getRGB(x, y)
-                val alpha = rgb and 0xFF000000.toInt()
-                if (alpha ushr 24 >= 80)
-                    setRGB(x, y, (0xFF000000.toInt()) or color.rgb)
-                else
-                    setRGB(x, y, 0)
+        val rgbMask: Int = 0x00ffffff
+        val replaceRGB: Int = 0x00ffffff // white
+        val toggleRGB = replaceRGB xor (color.red shl 16 or (color.green shl 8) or color.blue)
+        val w: Int = width
+        val h: Int = height
+        val rgb: IntArray = getRGB(0, 0, w, h, null, 0, w)
+        for (i in rgb.indices) {
+            if (rgb[i] and rgbMask == replaceRGB) {
+                rgb[i] = rgb[i] xor toggleRGB
             }
         }
+        setRGB(0, 0, w, h, rgb, 0, w)
         return this
     }
-    
+
     private fun Image.toBufferedImage(): BufferedImage {
         if (this is BufferedImage) {
             return this
         }
         val bufferedImage = BufferedImage(this.getWidth(null), this.getHeight(null), BufferedImage.TYPE_INT_ARGB)
-        
+
         val graphics2D = bufferedImage.createGraphics()
         graphics2D.drawImage(this, 0, 0, null)
         graphics2D.dispose()
-        
+
         return bufferedImage
     }
-    
+
     data class Destination(val route: String, val routeFont: DotMtxFont,
-                            val frames: List<DestinationFrame>,
-                            val screenTimes: List<Float> = emptyList()) {
-        
+                           val frames: List<DestinationFrame>,
+                           val screenTimes: List<Float> = emptyList()) {
+
         val routeGL: GlyphLayout = GlyphLayout(routeFont, route)
-        
+
         fun generateMatrix(width: Int, height: Int, frame: DestinationFrame, defaultTextAlignment: TextAlignment): BufferedImage {
             return BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR).apply {
                 val g = createGraphics()
@@ -227,9 +229,9 @@ class DestSign(val width: Int, val height: Int,
             }
         }
     }
-    
+
     data class DestinationFrame(val dest1: String, val dest1Font: DotMtxFont,
                                 val dest2: String = "", val dest2Font: DotMtxFont = dest1Font,
                                 val textAlignment: TextAlignment? = null)
-    
+
 }
