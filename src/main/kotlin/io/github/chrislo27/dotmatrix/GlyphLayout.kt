@@ -10,6 +10,7 @@ class GlyphLayout(val font: DotMtxFont, val text: String) {
     val missingChars: Set<Char> = mutableSetOf()
     val glyphPositions: List<GlyphPosition>
     val width: Int
+    val height: Int = font.height
 
     init {
         missingChars as MutableSet
@@ -28,10 +29,10 @@ class GlyphLayout(val font: DotMtxFont, val text: String) {
         }
         width = ((glyphPositions.map { it.x + it.glyph.w }.max() ?: 0) - (glyphPositions.map { it.x }.min() ?: 0)).absoluteValue
     }
-    
+
     fun toBufferedImage(): BufferedImage {
         val subimageCache: MutableMap<Glyph, BufferedImage> = mutableMapOf()
-        return BufferedImage(width.coerceAtLeast(1), font.height, BufferedImage.TYPE_4BYTE_ABGR).apply { 
+        return BufferedImage(width.coerceAtLeast(1), height, BufferedImage.TYPE_4BYTE_ABGR).apply {
             val g = createGraphics()
             glyphPositions.forEach { glyphPos ->
                 val glyph = glyphPos.glyph

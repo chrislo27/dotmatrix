@@ -211,27 +211,25 @@ class DestSign(val width: Int, val height: Int,
                     }
                     g.drawImage(this, x, y, null as ImageObserver?)
                 }
-                if (frame.dest2.isNotEmpty()) {
-                    // Double line
-                    val dest1 = GlyphLayout(frame.dest1Font, frame.dest1)
-                    val dest1Img = dest1.toBufferedImage()
-                    dest1Img.drawAsText(0)
-                    val dest2 = GlyphLayout(frame.dest2Font, frame.dest2)
-                    val dest2Img = dest2.toBufferedImage()
-                    dest2Img.drawAsText(height - dest2Img.height)
-                } else {
+                if (frame.lines.size == 1) {
                     // Single line
-                    val dest1 = GlyphLayout(frame.dest1Font, frame.dest1)
-                    val dest1Img = dest1.toBufferedImage()
-                    dest1Img.drawAsText((height / 2 - dest1Img.height / 2f).roundToInt())
+                    val dest1 = frame.lines.first()
+                    dest1.toBufferedImage().drawAsText((height / 2 - dest1.height / 2f).roundToInt())
+                } else {
+                    val totalHeight = frame.lines.sumBy { it.height }.coerceAtLeast(1)
+                    val spacing: Float = (height - totalHeight).toFloat() / (frame.lines.size - 1).coerceAtLeast(1)
+                    frame.lines.fold(0f) { acc, layout ->
+                        val y = acc.roundToInt()
+                        layout.toBufferedImage().drawAsText(y)
+                        acc + layout.height + spacing
+                    }
                 }
                 g.dispose()
             }
         }
     }
 
-    data class DestinationFrame(val dest1: String, val dest1Font: DotMtxFont,
-                                val dest2: String = "", val dest2Font: DotMtxFont = dest1Font,
+    data class DestinationFrame(val lines: List<GlyphLayout>,
                                 val textAlignment: TextAlignment? = null)
 
 }
