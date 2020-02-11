@@ -15,7 +15,8 @@ class DestSign(val width: Int, val height: Int,
                val ledSize: Int = 3, val ledSpacing: Int = 1, val borderSize: Int = 4,
                val ledColor: Color = ORANGE, val offColor: Color = DARK_GREY, val borderColor: Color = Color.BLACK,
                val scrollTime: Float = 1.75f, val scrollAnimation: AnimationType = AnimationType.NoAnimation,
-               val defaultTextAlignment: TextAlignment = TextAlignment.CENTRE) {
+               val defaultTextAlignment: TextAlignment = TextAlignment.CENTRE,
+               val circles: Boolean = false) {
 
     companion object {
         val ORANGE: Color = Color(255, 144, 0, 255)
@@ -36,6 +37,22 @@ class DestSign(val width: Int, val height: Int,
             }
             for (y in (borderSize + ledSize) until (height - borderSize) step (ledSize + ledSpacing)) {
                 g.fillRect(borderSize, y, width - borderSize * 2, ledSpacing)
+            }
+            if (circles && ledSize >= 3) {
+                val circleTemplate = BufferedImage(ledSize, ledSize, BufferedImage.TYPE_4BYTE_ABGR).also { c ->
+                    val gr = c.createGraphics()
+                    gr.color = g.color
+                    gr.fillRect(0, 0, c.width, c.height)
+                    gr.composite = AlphaComposite.Clear
+                    gr.fillOval(0, 0, ledSize, ledSize)
+                    gr.composite = AlphaComposite.SrcOver
+                    gr.dispose()
+                }
+                for (x in 0 until width) {
+                    for (y in 0 until height) {
+                        g.drawImage(circleTemplate, borderSize + (ledSize + ledSpacing) * x, borderSize + (ledSize + ledSpacing) * y, null)
+                    }
+                }
             }
             g.color = borderColor
             g.fillRect(0, 0, width, borderSize)
