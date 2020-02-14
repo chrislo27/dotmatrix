@@ -15,7 +15,6 @@ class DestSign(val width: Int, val height: Int,
                val ledSize: Int = 3, val ledSpacing: Int = 1, val borderSize: Int = 4,
                val ledColor: Color = ORANGE, val offColor: Color = DARK_GREY, val borderColor: Color = Color.BLACK,
                val scrollTime: Float = 1.75f, val scrollAnimation: AnimationType = AnimationType.NoAnimation,
-               val defaultTextAlignment: TextAlignment = TextAlignment.CENTRE,
                val circles: Boolean = false) {
 
     companion object {
@@ -81,7 +80,7 @@ class DestSign(val width: Int, val height: Int,
         val numDestFrames = destination?.frames?.size ?: 0
         val onPr = state >= numDestFrames
         val currentDest = (if (onPr) pr else destination)!!
-        return currentDest.generateMatrix(this.width, this.height, currentDest.frames[if (onPr) (state - numDestFrames) else state], defaultTextAlignment)
+        return currentDest.generateMatrix(this.width, this.height, currentDest.frames[if (onPr) (state - numDestFrames) else state], currentDest.defaultTextAlignment)
     }
 
     fun generateImageForState(state: Int): BufferedImage {
@@ -89,7 +88,7 @@ class DestSign(val width: Int, val height: Int,
     }
 
     fun generateImageForFrame(destination: Destination, destFrame: DestinationFrame): BufferedImage {
-        return generateImageForMatrix(destination.generateMatrix(this.width, this.height, destFrame, defaultTextAlignment).changeToColor(ledColor))
+        return generateImageForMatrix(destination.generateMatrix(this.width, this.height, destFrame, destination.defaultTextAlignment).changeToColor(ledColor))
     }
 
     fun generateGif(os: OutputStream) {
@@ -98,8 +97,10 @@ class DestSign(val width: Int, val height: Int,
         e.setSize(outputWidth, outputHeight)
         e.setRepeat(0)
         val numDestFrames = destination?.frames?.size ?: 0
+
         data class StateImage(val dest: Destination, val frame: DestinationFrame, val img: BufferedImage,
                               val stateTime: Float)
+
         val stateImages: List<StateImage> = (0 until stateCount).map { state ->
             val onPr = state >= numDestFrames
             val currentDest = (if (onPr) pr else destination)!!
@@ -123,8 +124,8 @@ class DestSign(val width: Int, val height: Int,
                 val nextDest: Destination = stateImages[nextIndex].dest
                 val prevFrame: DestinationFrame = stateImages[i].frame
                 val nextFrame: DestinationFrame = stateImages[nextIndex].frame
-                val prevMtx: BufferedImage = prevDest.generateMatrix(this.width, this.height, prevFrame, defaultTextAlignment)
-                val nextMtx: BufferedImage = nextDest.generateMatrix(this.width, this.height, nextFrame, defaultTextAlignment)
+                val prevMtx: BufferedImage = prevDest.generateMatrix(this.width, this.height, prevFrame, prevDest.defaultTextAlignment)
+                val nextMtx: BufferedImage = nextDest.generateMatrix(this.width, this.height, nextFrame, nextDest.defaultTextAlignment)
                 e.setDelay((stateImages[i].stateTime * 1000f).roundToInt())
                 e.addFrame(stateImages[i].img)
                 val keepRouteNum = prevDest === nextDest && prevDest.routeGL.width > 0
@@ -140,6 +141,14 @@ class DestSign(val width: Int, val height: Int,
                             val yOffset = (progress * mtx.height).toInt()
                             g.drawImage(prevMtx, 0, yOffset, null)
                             g.drawImage(nextMtx, 0, -mtx.height + yOffset, null)
+                            if (routeNumImg != null) {
+                                // Keep route number stationary
+                                val routeWidth = prevDest.routeGL.width
+                                g.composite = AlphaComposite.Clear
+                                g.fillRect(0, 0, routeWidth, mtx.height)
+                                g.composite = AlphaComposite.SrcOver
+                                g.drawImage(routeNumImg, 0, 0, null)
+                            }
                         }
                         is AnimationType.Sidewipe -> {
                             g.drawImage(prevMtx, 0, 0, null)
@@ -151,15 +160,8 @@ class DestSign(val width: Int, val height: Int,
                                 g.drawImage(nextMtx.getSubimage(0, 0, xOffset, nextMtx.height), 0, 0, null)
                             }
                         }
-                        else -> {}
-                    }
-                    if (routeNumImg != null) {
-                        // Keep route number stationary
-                        val routeWidth = prevDest.routeGL.width
-                        g.composite = AlphaComposite.Clear
-                        g.fillRect(0, 0, routeWidth, mtx.height)
-                        g.composite = AlphaComposite.SrcOver
-                        g.drawImage(routeNumImg, 0, 0, null)
+                        else -> {
+                        }
                     }
                     mtx.changeToColor(ledColor)
                     e.addFrame(generateImageForMatrix(mtx))
@@ -207,7 +209,8 @@ class DestSign(val width: Int, val height: Int,
 
     data class Destination(val route: String, val routeFont: DotMtxFont,
                            val frames: List<DestinationFrame>,
-                           val screenTimes: List<Float> = emptyList()) {
+                           val screenTimes: List<Float> = emptyList(),
+                           val defaultTextAlignment: TextAlignment = TextAlignment.CENTRE) {
 
         val routeGL: GlyphLayout = GlyphLayout(routeFont, route)
 
