@@ -29,7 +29,7 @@ class GlyphLayout(val font: DotMtxFont, val text: String) {
         }
         width = ((glyphPositions.map { it.x + it.glyph.w }.max() ?: 0) - (glyphPositions.map { it.x }.min() ?: 0)).absoluteValue
     }
-
+    
     fun toBufferedImage(): BufferedImage {
         val subimageCache: MutableMap<Glyph, BufferedImage> = mutableMapOf()
         return BufferedImage(width.coerceAtLeast(1), height, BufferedImage.TYPE_4BYTE_ABGR).apply {

@@ -4,6 +4,9 @@ import com.madgag.gif.fmsware.AnimatedGifEncoder
 import java.awt.AlphaComposite
 import java.awt.Color
 import java.awt.Image
+import java.awt.Rectangle
+import java.awt.geom.Area
+import java.awt.geom.Ellipse2D
 import java.awt.image.BufferedImage
 import java.awt.image.ImageObserver
 import java.io.File
@@ -37,14 +40,13 @@ class DestSign(val width: Int, val height: Int,
             for (y in (borderSize + ledSize) until (height - borderSize) step (ledSize + ledSpacing)) {
                 g.fillRect(borderSize, y, width - borderSize * 2, ledSpacing)
             }
-            if (circles && ledSize >= 3) {
+            if (circles && ledSize >= 4) {
                 val circleTemplate = BufferedImage(ledSize, ledSize, BufferedImage.TYPE_4BYTE_ABGR).also { c ->
                     val gr = c.createGraphics()
                     gr.color = g.color
-                    gr.fillRect(0, 0, c.width, c.height)
-                    gr.composite = AlphaComposite.Clear
-                    gr.fillOval(0, 0, ledSize, ledSize)
-                    gr.composite = AlphaComposite.SrcOver
+                    gr.fill(Area(Rectangle(0, 0, c.width, c.height)).apply {
+                        subtract(Area(Ellipse2D.Float(-0.5f, -0.5f, c.width.toFloat(), c.height.toFloat())))
+                    })
                     gr.dispose()
                 }
                 for (x in 0 until width) {
@@ -114,7 +116,7 @@ class DestSign(val width: Int, val height: Int,
                 e.addFrame(stateImages[i].img)
             }
         } else {
-            val framerate = height.coerceIn(1, 10)
+            val framerate = (if (scrollAnimation is AnimationType.Sidewipe) width else height).coerceIn(1, 12)
             // Interpolation
             val mtx = BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR)
             val g = mtx.createGraphics()
@@ -131,13 +133,14 @@ class DestSign(val width: Int, val height: Int,
                 val keepRouteNum = prevDest === nextDest && prevDest.routeGL.width > 0
                 val routeNumImg: BufferedImage? = if (keepRouteNum) prevMtx.getSubimage(0, 0, prevDest.routeGL.width, prevMtx.height) else null
                 for (f in 0 until framerate) {
+                    if (i == stateCount - 1 && scrollAnimation is AnimationType.FalldownFrames) break
                     val progress = f / framerate.toFloat()
                     e.setDelay(((1000f * scrollAnimation.delay) / framerate).roundToInt().coerceAtLeast(3))
                     g.composite = AlphaComposite.Clear
                     g.fillRect(0, 0, mtx.width, mtx.height)
                     g.composite = AlphaComposite.SrcOver
                     when (scrollAnimation) {
-                        is AnimationType.Falldown -> {
+                        is AnimationType.Falldown, is AnimationType.FalldownFrames -> {
                             val yOffset = (progress * mtx.height).toInt()
                             g.drawImage(prevMtx, 0, yOffset, null)
                             g.drawImage(nextMtx, 0, -mtx.height + yOffset, null)
