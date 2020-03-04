@@ -14,7 +14,7 @@ import java.io.OutputStream
 import kotlin.math.roundToInt
 
 
-class DestSign(val width: Int, val height: Int,
+open class DestSign(val width: Int, val height: Int,
                val ledSize: Int = 3, val ledSpacing: Int = 1, val borderSize: Int = 4,
                val ledColor: Color = ORANGE, val offColor: Color = DARK_GREY, val borderColor: Color = Color.BLACK,
                val scrollTime: Float = 1.75f, val scrollAnimation: AnimationType = AnimationType.NoAnimation,
@@ -63,7 +63,7 @@ class DestSign(val width: Int, val height: Int,
             g.dispose()
         }
     }
-
+    
     fun generateImageForMatrix(matrixState: BufferedImage): BufferedImage {
         return BufferedImage(outputWidth, outputHeight, BufferedImage.TYPE_4BYTE_ABGR).apply {
             val g = createGraphics()
@@ -82,15 +82,23 @@ class DestSign(val width: Int, val height: Int,
         val numDestFrames = destination?.frames?.size ?: 0
         val onPr = state >= numDestFrames
         val currentDest = (if (onPr) pr else destination)!!
-        return currentDest.generateMatrix(this.width, this.height, currentDest.frames[if (onPr) (state - numDestFrames) else state], currentDest.defaultTextAlignment)
+        return currentDest.generateMatrix(this.width, this.height, currentDest.frames[if (onPr) (state - numDestFrames) else state], currentDest.defaultTextAlignment).apply {
+            afterMatrixGenerated(this)
+        }
     }
-
+    
     fun generateImageForState(state: Int): BufferedImage {
         return generateImageForMatrix(generateMatrixForState(state).changeToColor(ledColor))
     }
-
+    
     fun generateImageForFrame(destination: Destination, destFrame: DestinationFrame): BufferedImage {
-        return generateImageForMatrix(destination.generateMatrix(this.width, this.height, destFrame, destination.defaultTextAlignment).changeToColor(ledColor))
+        return generateImageForMatrix(destination.generateMatrix(this.width, this.height, destFrame, destination.defaultTextAlignment).apply {
+            afterMatrixGenerated(this)
+            changeToColor(ledColor)
+        })
+    }
+    
+    open fun afterMatrixGenerated(mtx: BufferedImage) {
     }
 
     fun generateGif(os: OutputStream) {
@@ -166,6 +174,7 @@ class DestSign(val width: Int, val height: Int,
                         else -> {
                         }
                     }
+                    afterMatrixGenerated(mtx)
                     mtx.changeToColor(ledColor)
                     e.addFrame(generateImageForMatrix(mtx))
                 }
