@@ -139,7 +139,7 @@ open class DestSign(val width: Int, val height: Int,
                 e.setDelay((stateImages[i].stateTime * 1000f).roundToInt())
                 e.addFrame(stateImages[i].img)
                 val keepRouteNum = prevDest === nextDest && prevDest.routeGL.width > 0
-                val routeNumImg: BufferedImage? = if (keepRouteNum) prevMtx.getSubimage(0, 0, prevDest.routeGL.width, prevMtx.height) else null
+                val routeNumImg: BufferedImage? = if (keepRouteNum) prevMtx.getSubimage(if (prevDest.routeAlignment == TextAlignment.RIGHT) (mtx.width - prevDest.routeGL.width) else 0, 0, prevDest.routeGL.width, prevMtx.height) else null
                 for (f in 0 until framerate) {
                     if (i == stateCount - 1 && scrollAnimation is AnimationType.FalldownFrames) break
                     val progress = f / framerate.toFloat()
@@ -155,10 +155,11 @@ open class DestSign(val width: Int, val height: Int,
                             if (routeNumImg != null) {
                                 // Keep route number stationary
                                 val routeWidth = prevDest.routeGL.width
+                                val x = if (prevDest.routeAlignment == TextAlignment.RIGHT) (mtx.width - routeWidth) else 0
                                 g.composite = AlphaComposite.Clear
-                                g.fillRect(0, 0, routeWidth, mtx.height)
+                                g.fillRect(x, 0, routeWidth, mtx.height)
                                 g.composite = AlphaComposite.SrcOver
-                                g.drawImage(routeNumImg, 0, 0, null)
+                                g.drawImage(routeNumImg, x, 0, null)
                             }
                         }
                         is AnimationType.Sidewipe -> {
@@ -222,24 +223,26 @@ open class DestSign(val width: Int, val height: Int,
     data class Destination(val route: String, val routeFont: DotMtxFont,
                            val frames: List<DestinationFrame>,
                            val screenTimes: List<Float> = emptyList(),
-                           val defaultTextAlignment: TextAlignment = TextAlignment.CENTRE) {
+                           val defaultTextAlignment: TextAlignment = TextAlignment.CENTRE,
+                           val routeAlignment: TextAlignment = TextAlignment.LEFT) {
 
         val routeGL: GlyphLayout = GlyphLayout(routeFont, route)
 
         fun generateMatrix(width: Int, height: Int, frame: DestinationFrame, defaultTextAlignment: TextAlignment): BufferedImage {
+            if (routeAlignment == TextAlignment.CENTRE) error("Route alignment cannot be centre")
             return BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR).apply {
                 val g = createGraphics()
                 val hasRoute = route.isNotEmpty()
                 if (hasRoute) {
                     val routeImg = routeGL.toBufferedImage()
-                    g.drawImage(routeImg, 0, height / 2 - routeImg.height / 2, null as ImageObserver?)
+                    g.drawImage(routeImg, if (routeAlignment == TextAlignment.RIGHT) (this.width - routeImg.width) else 0, height / 2 - routeImg.height / 2, null as ImageObserver?)
                 }
                 val destWidth: Int = if (hasRoute) (width - routeGL.width) else width
                 fun BufferedImage.drawAsText(y: Int) {
                     val x: Int = when (frame.textAlignment ?: defaultTextAlignment) {
-                        TextAlignment.CENTRE -> (width - destWidth / 2f).toInt() - this.width / 2
-                        TextAlignment.LEFT -> if (hasRoute) routeGL.width else 0
-                        TextAlignment.RIGHT -> width - this.width
+                        TextAlignment.CENTRE -> if (hasRoute && routeAlignment == TextAlignment.RIGHT) (destWidth / 2 - this.width / 2) else ((width - destWidth / 2f).toInt() - this.width / 2)
+                        TextAlignment.LEFT -> if (hasRoute && routeAlignment == TextAlignment.LEFT) routeGL.width else 0
+                        TextAlignment.RIGHT -> if (hasRoute && routeAlignment == TextAlignment.RIGHT) (width - this.width - routeGL.width) else (width - this.width)
                     }
                     g.drawImage(this, x, y, null as ImageObserver?)
                 }
