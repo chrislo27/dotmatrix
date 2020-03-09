@@ -82,7 +82,7 @@ open class DestSign(val width: Int, val height: Int,
         val numDestFrames = destination?.frames?.size ?: 0
         val onPr = state >= numDestFrames
         val currentDest = (if (onPr) pr else destination)!!
-        return currentDest.generateMatrix(this.width, this.height, currentDest.frames[if (onPr) (state - numDestFrames) else state], currentDest.defaultTextAlignment).apply {
+        return currentDest.generateMatrix(this.width, this.height, currentDest.frames[if (onPr) (state - numDestFrames) else state]).apply {
             afterMatrixGenerated(this)
         }
     }
@@ -92,7 +92,7 @@ open class DestSign(val width: Int, val height: Int,
     }
 
     fun generateImageForFrame(destination: Destination, destFrame: DestinationFrame): BufferedImage {
-        return generateImageForMatrix(destination.generateMatrix(this.width, this.height, destFrame, destination.defaultTextAlignment).apply {
+        return generateImageForMatrix(destination.generateMatrix(this.width, this.height, destFrame).apply {
             afterMatrixGenerated(this)
             changeToColor(ledColor)
         })
@@ -130,11 +130,11 @@ open class DestSign(val width: Int, val height: Int,
                 val nextDest: Destination = stateImages[nextIndex].dest
                 val prevFrame: DestinationFrame = stateImages[i].frame
                 val nextFrame: DestinationFrame = stateImages[nextIndex].frame
-                val prevMtx: BufferedImage = prevDest.generateMatrix(this.width, this.height, prevFrame, prevDest.defaultTextAlignment)
-                val nextMtx: BufferedImage = nextDest.generateMatrix(this.width, this.height, nextFrame, nextDest.defaultTextAlignment)
+                val prevMtx: BufferedImage = prevDest.generateMatrix(this.width, this.height, prevFrame)
+                val nextMtx: BufferedImage = nextDest.generateMatrix(this.width, this.height, nextFrame)
                 framesList += stateImages[i].img to (stateImages[i].stateTime * 1000f).roundToInt()
-                val keepRouteNum = prevDest === nextDest && prevDest.routeGL.width > 0
-                val routeNumImg: BufferedImage? = if (keepRouteNum) prevMtx.getSubimage(if (prevDest.routeAlignment == TextAlignment.RIGHT) (mtx.width - prevDest.routeGL.width) else 0, 0, prevDest.routeGL.width, prevMtx.height) else null
+                val keepRouteNum = prevDest === nextDest && prevDest.route.totalWidth > 0
+                val routeNumImg: BufferedImage? = if (keepRouteNum) prevMtx.getSubimage(if (prevDest.routeAlignment == TextAlignment.RIGHT) (mtx.width - prevDest.route.totalWidth) else 0, 0, prevDest.route.totalWidth, prevMtx.height) else null
                 for (f in 0 until framerate) {
                     if (i == stateCount - 1 && scrollAnimation is AnimationType.FalldownFrames) break
                     val progress = f / framerate.toFloat()
@@ -149,7 +149,7 @@ open class DestSign(val width: Int, val height: Int,
                             g.drawImage(nextMtx, 0, -mtx.height + yOffset, null)
                             if (routeNumImg != null) {
                                 // Keep route number stationary
-                                val routeWidth = prevDest.routeGL.width
+                                val routeWidth = prevDest.route.totalWidth
                                 val x = if (prevDest.routeAlignment == TextAlignment.RIGHT) (mtx.width - routeWidth) else 0
                                 g.composite = AlphaComposite.Clear
                                 g.fillRect(x, 0, routeWidth, mtx.height)
@@ -227,52 +227,5 @@ open class DestSign(val width: Int, val height: Int,
 
         return bufferedImage
     }
-
-    data class Destination(val route: String, val routeFont: DotMtxFont,
-                           val frames: List<DestinationFrame>,
-                           val screenTimes: List<Float> = emptyList(),
-                           val defaultTextAlignment: TextAlignment = TextAlignment.CENTRE,
-                           val routeAlignment: TextAlignment = TextAlignment.LEFT) {
-
-        val routeGL: GlyphLayout = GlyphLayout(routeFont, route)
-
-        fun generateMatrix(width: Int, height: Int, frame: DestinationFrame, defaultTextAlignment: TextAlignment): BufferedImage {
-            if (routeAlignment == TextAlignment.CENTRE) error("Route alignment cannot be centre")
-            return BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR).apply {
-                val g = createGraphics()
-                val hasRoute = route.isNotEmpty()
-                if (hasRoute) {
-                    val routeImg = routeGL.toBufferedImage()
-                    g.drawImage(routeImg, if (routeAlignment == TextAlignment.RIGHT) (this.width - routeImg.width) else 0, height / 2 - routeImg.height / 2, null as ImageObserver?)
-                }
-                val destWidth: Int = if (hasRoute) (width - routeGL.width) else width
-                fun BufferedImage.drawAsText(y: Int) {
-                    val x: Int = when (frame.textAlignment ?: defaultTextAlignment) {
-                        TextAlignment.CENTRE -> if (hasRoute && routeAlignment == TextAlignment.RIGHT) (destWidth / 2 - this.width / 2) else ((width - destWidth / 2f).toInt() - this.width / 2)
-                        TextAlignment.LEFT -> if (hasRoute && routeAlignment == TextAlignment.LEFT) routeGL.width else 0
-                        TextAlignment.RIGHT -> if (hasRoute && routeAlignment == TextAlignment.RIGHT) (width - this.width - routeGL.width) else (width - this.width)
-                    }
-                    g.drawImage(this, x, y, null as ImageObserver?)
-                }
-                if (frame.lines.size == 1) {
-                    // Single line
-                    val dest1 = frame.lines.first()
-                    dest1.toBufferedImage().drawAsText((height / 2 - dest1.height / 2f).roundToInt())
-                } else {
-                    val totalHeight = frame.lines.sumBy { it.height }.coerceAtLeast(1)
-                    val spacing: Float = (height - totalHeight).toFloat() / (frame.lines.size - 1).coerceAtLeast(1)
-                    frame.lines.fold(0f) { acc, layout ->
-                        val y = acc.roundToInt()
-                        layout.toBufferedImage().drawAsText(y)
-                        acc + layout.height + spacing
-                    }
-                }
-                g.dispose()
-            }
-        }
-    }
-
-    data class DestinationFrame(val lines: List<GlyphLayout>,
-                                val textAlignment: TextAlignment? = null)
 
 }
