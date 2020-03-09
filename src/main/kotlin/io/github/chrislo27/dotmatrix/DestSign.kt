@@ -15,10 +15,10 @@ import kotlin.math.roundToInt
 
 
 open class DestSign(val width: Int, val height: Int,
-               val ledSize: Int = 3, val ledSpacing: Int = 1, val borderSize: Int = 4,
-               val ledColor: Color = ORANGE, val offColor: Color = DARK_GREY, val borderColor: Color = Color.BLACK,
-               val scrollTime: Float = 1.75f, val scrollAnimation: AnimationType = AnimationType.NoAnimation,
-               val circles: Boolean = false) {
+                    val ledSize: Int = 3, val ledSpacing: Int = 1, val borderSize: Int = 4,
+                    val ledColor: Color = ORANGE, val offColor: Color = DARK_GREY, val borderColor: Color = Color.BLACK,
+                    val scrollTime: Float = 1.75f, val scrollAnimation: AnimationType = AnimationType.NoAnimation,
+                    val circles: Boolean = false, val maxScrollFramerate: Int = 12) {
 
     companion object {
         val ORANGE: Color = Color(255, 144, 0, 255)
@@ -63,7 +63,7 @@ open class DestSign(val width: Int, val height: Int,
             g.dispose()
         }
     }
-    
+
     fun generateImageForMatrix(matrixState: BufferedImage): BufferedImage {
         return BufferedImage(outputWidth, outputHeight, BufferedImage.TYPE_4BYTE_ABGR).apply {
             val g = createGraphics()
@@ -86,27 +86,24 @@ open class DestSign(val width: Int, val height: Int,
             afterMatrixGenerated(this)
         }
     }
-    
+
     fun generateImageForState(state: Int): BufferedImage {
         return generateImageForMatrix(generateMatrixForState(state).changeToColor(ledColor))
     }
-    
+
     fun generateImageForFrame(destination: Destination, destFrame: DestinationFrame): BufferedImage {
         return generateImageForMatrix(destination.generateMatrix(this.width, this.height, destFrame, destination.defaultTextAlignment).apply {
             afterMatrixGenerated(this)
             changeToColor(ledColor)
         })
     }
-    
+
     open fun afterMatrixGenerated(mtx: BufferedImage) {
     }
 
-    fun generateGif(os: OutputStream) {
-        val e = AnimatedGifEncoder()
-        e.start(os)
-        e.setSize(outputWidth, outputHeight)
-        e.setRepeat(0)
+    fun generateAnimatedFrames(): List<Pair<BufferedImage, Int>> {
         val numDestFrames = destination?.frames?.size ?: 0
+        val framesList = mutableListOf<Pair<BufferedImage, Int>>()
 
         data class StateImage(val dest: Destination, val frame: DestinationFrame, val img: BufferedImage,
                               val stateTime: Float)
@@ -120,11 +117,10 @@ open class DestSign(val width: Int, val height: Int,
         }
         if (scrollAnimation == AnimationType.NoAnimation || stateCount == 1) {
             for (i in 0 until stateCount) {
-                e.setDelay((stateImages[i].stateTime * 1000f).roundToInt())
-                e.addFrame(stateImages[i].img)
+                framesList += stateImages[i].img to (stateImages[i].stateTime * 1000f).roundToInt()
             }
         } else {
-            val framerate = (if (scrollAnimation is AnimationType.Sidewipe) width else height).coerceIn(1, 12)
+            val framerate = (if (scrollAnimation is AnimationType.Sidewipe) width else height).coerceIn(1, maxScrollFramerate)
             // Interpolation
             val mtx = BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR)
             val g = mtx.createGraphics()
@@ -136,14 +132,13 @@ open class DestSign(val width: Int, val height: Int,
                 val nextFrame: DestinationFrame = stateImages[nextIndex].frame
                 val prevMtx: BufferedImage = prevDest.generateMatrix(this.width, this.height, prevFrame, prevDest.defaultTextAlignment)
                 val nextMtx: BufferedImage = nextDest.generateMatrix(this.width, this.height, nextFrame, nextDest.defaultTextAlignment)
-                e.setDelay((stateImages[i].stateTime * 1000f).roundToInt())
-                e.addFrame(stateImages[i].img)
+                framesList += stateImages[i].img to (stateImages[i].stateTime * 1000f).roundToInt()
                 val keepRouteNum = prevDest === nextDest && prevDest.routeGL.width > 0
                 val routeNumImg: BufferedImage? = if (keepRouteNum) prevMtx.getSubimage(if (prevDest.routeAlignment == TextAlignment.RIGHT) (mtx.width - prevDest.routeGL.width) else 0, 0, prevDest.routeGL.width, prevMtx.height) else null
                 for (f in 0 until framerate) {
                     if (i == stateCount - 1 && scrollAnimation is AnimationType.FalldownFrames) break
                     val progress = f / framerate.toFloat()
-                    e.setDelay(((1000f * scrollAnimation.delay) / framerate).roundToInt().coerceAtLeast(3))
+                    val ms = ((1000f * scrollAnimation.delay) / framerate).roundToInt().coerceAtLeast(3)
                     g.composite = AlphaComposite.Clear
                     g.fillRect(0, 0, mtx.width, mtx.height)
                     g.composite = AlphaComposite.SrcOver
@@ -177,10 +172,23 @@ open class DestSign(val width: Int, val height: Int,
                     }
                     afterMatrixGenerated(mtx)
                     mtx.changeToColor(ledColor)
-                    e.addFrame(generateImageForMatrix(mtx))
+                    framesList += generateImageForMatrix(mtx) to ms
                 }
             }
             g.dispose()
+        }
+        return framesList
+    }
+
+    fun generateGif(os: OutputStream) {
+        val e: AnimatedGifEncoder = AnimatedGifEncoder()
+        e.start(os)
+        e.setSize(outputWidth, outputHeight)
+        e.setRepeat(0)
+        val frames = generateAnimatedFrames()
+        frames.forEach { (img, ms) ->
+            e.setDelay(ms)
+            e.addFrame(img)
         }
         e.finish()
         os.close()
