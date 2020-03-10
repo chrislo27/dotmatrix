@@ -84,7 +84,7 @@ data class GlyphLayout(val runs: List<GlyphRun>, val glyphAlign: List<VerticalAl
     }
 }
 
-data class LayoutLines(val lines: List<GlyphLayout>, val lineSpacing: LineSpacing) {
+data class LayoutLines(val lines: List<GlyphLayout>, val lineSpacing: LineSpacing = LineSpacing.FLUSH_TO_EDGES) {
     
     val totalWidth: Int = lines.maxBy { it.width }?.width ?: 0
     val totalHeight: Int = lines.sumBy { it.height }
