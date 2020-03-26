@@ -56,7 +56,7 @@ class GlyphRun(val font: DotMtxFont, val text: String) {
 
 data class GlyphLayout(val runs: List<GlyphRun>, val glyphAlign: List<VerticalAlignment>, val horizontalAlign: TextAlignment) {
     
-    constructor(runs: List<GlyphRun>, glyphAlign: VerticalAlignment = VerticalAlignment.CENTRE, horizontalAlign: TextAlignment = TextAlignment.CENTRE)
+    constructor(runs: List<GlyphRun>, glyphAlign: VerticalAlignment = VerticalAlignment.BOTTOM, horizontalAlign: TextAlignment = TextAlignment.CENTRE)
             : this(runs, if (runs.isEmpty()) emptyList() else List(runs.size) { glyphAlign }, horizontalAlign)
     
     val width: Int = if (runs.isEmpty()) 0 else (runs.sumBy { r ->
@@ -109,7 +109,6 @@ data class LayoutLines(val lines: List<GlyphLayout>, val lineSpacing: LineSpacin
                     LineSpacing.FLUSH_TO_EDGES -> {
                         val totalHeight = totalHeight.coerceAtLeast(1)
                         val spacing: Float = (height - totalHeight).toFloat() / (lines.size - 1).coerceAtLeast(1)
-                        println("height: $height  totalHeight: $totalHeight")
                         lines.fold(0f) { acc, layout ->
                             val y = acc.roundToInt()
                             g.drawImage(layout.toBufferedImage(), layout.determineX(), y, null)
@@ -117,7 +116,13 @@ data class LayoutLines(val lines: List<GlyphLayout>, val lineSpacing: LineSpacin
                         }
                     }
                     LineSpacing.EQUISPACED -> {
-                    
+                        val totalHeight = totalHeight.coerceAtLeast(1)
+                        val spacing: Float = (height - totalHeight).toFloat() / (lines.size + 1).coerceAtLeast(1)
+                        lines.fold(spacing) { acc, layout ->
+                            val y = acc.roundToInt()
+                            g.drawImage(layout.toBufferedImage(), layout.determineX(), y, null)
+                            acc + layout.height + spacing
+                        }
                     }
                 }
             }
