@@ -17,14 +17,15 @@ import kotlin.math.roundToInt
 open class DestSign(val width: Int, val height: Int,
                     val ledSize: Int = 3, val ledSpacing: Int = 1, val borderSize: Int = 4,
                     val ledColor: Color = ORANGE, val offColor: Color = DARK_GREY, val borderColor: Color = Color.BLACK,
-                    val scrollTime: Float = 1.75f, val scrollAnimation: AnimationType = AnimationType.NoAnimation,
-                    val circles: Boolean = false, val maxScrollFramerate: Int = 12) {
+                    val scrollTime: Float = 1.75f, defaultAnimation: AnimationType = AnimationType.NoAnimation,
+                    val circles: Boolean = false, val maxScrollFramerate: Int = 30) {
 
     companion object {
         val ORANGE: Color = Color(255, 144, 0, 255)
         val DARK_GREY: Color = Color(64, 64, 64, 255)
     }
 
+    val defaultAnimation: AnimationType = if (defaultAnimation == AnimationType.Inherit) AnimationType.NoAnimation else defaultAnimation
     val outputWidth: Int = width * ledSize + (width - 1) * ledSpacing + borderSize * 2
     val outputHeight: Int = height * ledSize + (height - 1) * ledSpacing + borderSize * 2
     var destination: Destination? = null
@@ -101,6 +102,8 @@ open class DestSign(val width: Int, val height: Int,
     open fun afterMatrixGenerated(mtx: BufferedImage) {
     }
 
+    private fun DestinationFrame.getInheritedAnimation(): AnimationType = if (this.animation == AnimationType.Inherit) defaultAnimation else this.animation
+
     fun generateAnimatedFrames(): List<Pair<BufferedImage, Int>> {
         val numDestFrames = destination?.frames?.size ?: 0
         val framesList = mutableListOf<Pair<BufferedImage, Int>>()
@@ -115,12 +118,12 @@ open class DestSign(val width: Int, val height: Int,
             val currentFrame = currentDest.frames[index]
             StateImage(currentDest, currentFrame, generateImageForFrame(currentDest, currentFrame), currentDest.screenTimes.getOrElse(index) { scrollTime }.let { if (it <= 0f) scrollTime else it })
         }
-        if (scrollAnimation == AnimationType.NoAnimation || stateCount == 1) {
+        val allNoAnimation = listOfNotNull(destination, pr).all { it.frames.all { f -> f.getInheritedAnimation() == AnimationType.NoAnimation } }
+        if (allNoAnimation || stateCount == 1) {
             for (i in 0 until stateCount) {
                 framesList += stateImages[i].img to (stateImages[i].stateTime * 1000f).roundToInt()
             }
         } else {
-            val framerate = (if (scrollAnimation is AnimationType.Sidewipe) width else height).coerceIn(1, maxScrollFramerate)
             // Interpolation
             val mtx = BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR)
             val g = mtx.createGraphics()
@@ -130,49 +133,71 @@ open class DestSign(val width: Int, val height: Int,
                 val nextDest: Destination = stateImages[nextIndex].dest
                 val prevFrame: DestinationFrame = stateImages[i].frame
                 val nextFrame: DestinationFrame = stateImages[nextIndex].frame
-                val prevMtx: BufferedImage = prevDest.generateMatrix(this.width, this.height, prevFrame)
-                val nextMtx: BufferedImage = nextDest.generateMatrix(this.width, this.height, nextFrame)
                 framesList += stateImages[i].img to (stateImages[i].stateTime * 1000f).roundToInt()
-                val keepRouteNum = prevDest === nextDest && prevDest.route.totalWidth > 0
-                val routeNumImg: BufferedImage? = if (keepRouteNum) prevMtx.getSubimage(if (prevDest.routeAlignment == TextAlignment.RIGHT) (mtx.width - prevDest.route.totalWidth) else 0, 0, prevDest.route.totalWidth, prevMtx.height) else null
-                for (f in 0 until framerate) {
-                    if (i == stateCount - 1 && scrollAnimation is AnimationType.FalldownFrames) break
-                    val progress = f / framerate.toFloat()
-                    val ms = ((1000f * scrollAnimation.delay) / framerate).roundToInt().coerceAtLeast(3)
-                    g.composite = AlphaComposite.Clear
-                    g.fillRect(0, 0, mtx.width, mtx.height)
-                    g.composite = AlphaComposite.SrcOver
-                    when (scrollAnimation) {
-                        is AnimationType.Falldown, is AnimationType.FalldownFrames -> {
-                            val yOffset = (progress * mtx.height).toInt()
-                            g.drawImage(prevMtx, 0, yOffset, null)
-                            g.drawImage(nextMtx, 0, -mtx.height + yOffset, null)
-                            if (routeNumImg != null) {
-                                // Keep route number stationary
-                                val routeWidth = prevDest.route.totalWidth
-                                val x = if (prevDest.routeAlignment == TextAlignment.RIGHT) (mtx.width - routeWidth) else 0
-                                g.composite = AlphaComposite.Clear
-                                g.fillRect(x, 0, routeWidth, mtx.height)
-                                g.composite = AlphaComposite.SrcOver
-                                g.drawImage(routeNumImg, x, 0, null)
-                            }
-                        }
-                        is AnimationType.Sidewipe -> {
-                            g.drawImage(prevMtx, 0, 0, null)
-                            val xOffset = (progress * mtx.width).toInt()
-                            if (xOffset > 0) {
-                                g.composite = AlphaComposite.Clear
-                                g.fillRect(0, 0, xOffset, mtx.height)
-                                g.composite = AlphaComposite.SrcOver
-                                g.drawImage(nextMtx.getSubimage(0, 0, xOffset, nextMtx.height), 0, 0, null)
-                            }
-                        }
-                        else -> {
-                        }
+                val ani = prevFrame.getInheritedAnimation()
+                if (ani.delay > 0f) {
+                    val framerate = maxScrollFramerate
+                    val keepRouteNum = prevDest === nextDest && prevDest.route.totalWidth > 0
+                    var prevMtx: BufferedImage = prevDest.generateMatrix(this.width, this.height, prevFrame)
+                    var nextMtx: BufferedImage = nextDest.generateMatrix(this.width, this.height, nextFrame)
+                    val routeNumImg: BufferedImage? = if (keepRouteNum) prevMtx.getSubimage(if (prevDest.routeAlignment == TextAlignment.RIGHT) (mtx.width - prevDest.route.totalWidth) else 0, 0, prevDest.route.totalWidth, prevMtx.height) else null
+                    val numFrames: Int = (framerate * ani.delay).roundToInt()
+                    if (ani is AnimationType.HorizontalScroll) {
+                        prevMtx = prevDest.generateMatrix(this.width, this.height, prevFrame, false)
+                        nextMtx = nextDest.generateMatrix(this.width, this.height, nextFrame, false)
                     }
-                    afterMatrixGenerated(mtx)
-                    mtx.changeToColor(ledColor)
-                    framesList += generateImageForMatrix(mtx) to ms
+                    for (f in 0 until numFrames) {
+                        val progress = f / numFrames.toFloat()
+                        val ms = ((1000f * ani.delay) / numFrames).roundToInt().coerceAtLeast(3)
+                        g.composite = AlphaComposite.Clear
+                        g.fillRect(0, 0, mtx.width, mtx.height)
+                        g.composite = AlphaComposite.SrcOver
+                        when (ani) {
+                            is AnimationType.Falldown -> {
+                                val yOffset = (progress * mtx.height).toInt()
+                                g.drawImage(prevMtx, 0, yOffset, null)
+                                g.drawImage(nextMtx, 0, -mtx.height + yOffset, null)
+                                if (routeNumImg != null) {
+                                    // Keep route number stationary
+                                    val routeWidth = prevDest.route.totalWidth
+                                    val x = if (prevDest.routeAlignment == TextAlignment.RIGHT) (mtx.width - routeWidth) else 0
+                                    g.composite = AlphaComposite.Clear
+                                    g.fillRect(x, 0, routeWidth, mtx.height)
+                                    g.composite = AlphaComposite.SrcOver
+                                    g.drawImage(routeNumImg, x, 0, null)
+                                }
+                            }
+                            is AnimationType.Sidewipe -> {
+                                g.drawImage(prevMtx, 0, 0, null)
+                                val xOffset = (progress * mtx.width).toInt()
+                                if (xOffset > 0) {
+                                    g.composite = AlphaComposite.Clear
+                                    g.fillRect(0, 0, xOffset, mtx.height)
+                                    g.composite = AlphaComposite.SrcOver
+                                    g.drawImage(nextMtx.getSubimage(0, 0, xOffset, nextMtx.height), 0, 0, null)
+                                }
+                            }
+                            is AnimationType.HorizontalScroll -> {
+                                val xOffset = (progress * mtx.width).toInt()
+                                g.drawImage(prevMtx, -xOffset, 0, null)
+                                g.drawImage(nextMtx, mtx.width - xOffset, 0, null)
+                                if (routeNumImg != null) {
+                                    // Redraw route number
+                                    val routeWidth = prevDest.route.totalWidth
+                                    val x = if (prevDest.routeAlignment == TextAlignment.RIGHT) (mtx.width - routeWidth) else 0
+                                    g.composite = AlphaComposite.Clear
+                                    g.fillRect(x, 0, routeWidth, mtx.height)
+                                    g.composite = AlphaComposite.SrcOver
+                                    g.drawImage(routeNumImg, x, 0, null)
+                                }
+                            }
+                            is AnimationType.Inherit, is AnimationType.NoAnimation -> {
+                            }
+                        }
+                        afterMatrixGenerated(mtx)
+                        mtx.changeToColor(ledColor)
+                        framesList += generateImageForMatrix(mtx) to ms
+                    }
                 }
             }
             g.dispose()

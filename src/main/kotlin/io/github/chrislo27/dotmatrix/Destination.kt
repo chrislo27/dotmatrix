@@ -8,12 +8,12 @@ data class Destination(val route: LayoutLines, val frames: List<DestinationFrame
                        val screenTimes: List<Float> = emptyList(),
                        val routeAlignment: TextAlignment = TextAlignment.LEFT) {
     
-    fun generateMatrix(width: Int, height: Int, frame: DestinationFrame): BufferedImage {
+    fun generateMatrix(width: Int, height: Int, frame: DestinationFrame, drawRoute: Boolean = true): BufferedImage {
         if (routeAlignment == TextAlignment.CENTRE) error("Route alignment cannot be centre")
         return BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR).apply {
             val g = createGraphics()
             val hasRoute = route.lines.isNotEmpty() && route.totalWidth > 0
-            if (hasRoute) {
+            if (hasRoute && drawRoute) {
                 val routeImg = route.toBufferedImage(route.totalWidth, height)
                 g.drawImage(routeImg, if (routeAlignment == TextAlignment.RIGHT) (this.width - routeImg.width) else 0, 0, null as ImageObserver?)
             }
@@ -36,6 +36,6 @@ data class Destination(val route: LayoutLines, val frames: List<DestinationFrame
 
 data class DestinationFrame(val layoutLines: List<LayoutLines>,
                             val alignment: TextAlignment = TextAlignment.CENTRE, val screenTime: Float = -1f,
-                            val spacingBetweenLayouts: Int = 2) {
+                            val spacingBetweenLayouts: Int = 2, val animation: AnimationType = AnimationType.Inherit) {
     val totalWidth: Int = layoutLines.sumBy { it.totalWidth } + (layoutLines.size - 1).coerceAtLeast(0) * spacingBetweenLayouts
 }
