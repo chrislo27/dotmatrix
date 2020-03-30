@@ -25,7 +25,9 @@ data class Destination(val route: LayoutLines, val frames: List<DestinationFrame
                 TextAlignment.RIGHT -> destWidth - frame.totalWidth
             })
             frame.layoutLines.forEach { ll ->
-                g.drawImage(ll.toBufferedImage(ll.totalWidth, height), x, 0, null)
+                if (ll.totalWidth > 0) {
+                    g.drawImage(ll.toBufferedImage(ll.totalWidth, height), x, 0, null)
+                }
                 x += ll.totalWidth + frame.spacingBetweenLayouts
             }
 
