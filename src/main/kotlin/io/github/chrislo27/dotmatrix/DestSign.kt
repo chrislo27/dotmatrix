@@ -133,8 +133,14 @@ open class DestSign(val width: Int, val height: Int,
                 val nextDest: Destination = stateImages[nextIndex].dest
                 val prevFrame: DestinationFrame = stateImages[i].frame
                 val nextFrame: DestinationFrame = stateImages[nextIndex].frame
-                framesList += stateImages[i].img to (stateImages[i].stateTime * 1000f).roundToInt()
                 val ani = prevFrame.getInheritedAnimation()
+                var stillFrameDelay = (stateImages[i].stateTime * 1000f).roundToInt()
+                if (ani.delay <= 0f && stillFrameDelay <= 0) {
+                    stillFrameDelay = (1000f / maxScrollFramerate).roundToInt()
+                }
+                if (stillFrameDelay > 0f) {
+                    framesList += stateImages[i].img to stillFrameDelay
+                }
                 if (ani.delay > 0f) {
                     val framerate = maxScrollFramerate
                     val keepRouteNum = prevDest === nextDest && prevDest.route.totalWidth > 0
