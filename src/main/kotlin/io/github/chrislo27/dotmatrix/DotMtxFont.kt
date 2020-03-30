@@ -30,6 +30,13 @@ class DotMtxFont(jsonStream: InputStream, imgStream: InputStream) {
         image = ImageIO.read(imgStream)
         jsonStream.close()
         imgStream.close()
+        
+        // Check bounds for each glyph
+        glyphs.values.forEach { g ->
+            if (g.x < 0 || (g.x + g.w) > image.width || g.y < 0 || (g.y + g.h) > image.height) {
+                error("Glyph '${g.character}' is out of bounds: {${g.x}, ${g.y}, ${g.w}, ${g.h}}, image size ${image.width} x ${image.height}")
+            }
+        }
     }
     
 }
