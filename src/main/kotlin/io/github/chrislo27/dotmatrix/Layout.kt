@@ -103,14 +103,14 @@ data class LayoutLines(val lines: List<GlyphLayout>, val lineSpacing: LineSpacin
             if (lines.size == 1) {
                 val layout = lines.first()
                 val img = layout.toBufferedImage()
-                g.drawImage(img, layout.determineX(), ((height - layout.height) / 2f).roundToInt(), null)
+                g.drawImage(img, layout.determineX(), ((height - layout.height) / 2f).toInt(), null)
             } else {
                 when (lineSpacing) {
                     LineSpacing.FLUSH_TO_EDGES -> {
                         val totalHeight = totalHeight.coerceAtLeast(1)
                         val spacing: Float = (height - totalHeight).toFloat() / (lines.size - 1).coerceAtLeast(1)
                         lines.fold(0f) { acc, layout ->
-                            val y = acc.roundToInt()
+                            val y = acc.toInt()
                             g.drawImage(layout.toBufferedImage(), layout.determineX(), y, null)
                             acc + layout.height + spacing
                         }
@@ -119,7 +119,7 @@ data class LayoutLines(val lines: List<GlyphLayout>, val lineSpacing: LineSpacin
                         val totalHeight = totalHeight.coerceAtLeast(1)
                         val spacing: Float = (height - totalHeight).toFloat() / (lines.size + 1).coerceAtLeast(1)
                         lines.fold(spacing) { acc, layout ->
-                            val y = acc.roundToInt()
+                            val y = acc.toInt()
                             g.drawImage(layout.toBufferedImage(), layout.determineX(), y, null)
                             acc + layout.height + spacing
                         }
