@@ -173,6 +173,20 @@ open class DestSign(val width: Int, val height: Int,
                                     g.drawImage(routeNumImg, x, 0, null)
                                 }
                             }
+                            is AnimationType.Fallup -> {
+                                val yOffset = (progress * mtx.height).toInt()
+                                g.drawImage(prevMtx, 0, -yOffset, null)
+                                g.drawImage(nextMtx, 0, mtx.height - yOffset, null)
+                                if (routeNumImg != null) {
+                                    // Keep route number stationary
+                                    val routeWidth = prevDest.route.totalWidth
+                                    val x = if (prevDest.routeAlignment == TextAlignment.RIGHT) (mtx.width - routeWidth) else 0
+                                    g.composite = AlphaComposite.Clear
+                                    g.fillRect(x, 0, routeWidth, mtx.height)
+                                    g.composite = AlphaComposite.SrcOver
+                                    g.drawImage(routeNumImg, x, 0, null)
+                                }
+                            }
                             is AnimationType.Sidewipe -> {
                                 g.drawImage(prevMtx, 0, 0, null)
                                 val xOffset = (progress * mtx.width).toInt()

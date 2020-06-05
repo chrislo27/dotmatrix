@@ -8,6 +8,8 @@ sealed class AnimationType(val delay: Float, val wide: Boolean) {
     object NoAnimation : AnimationType(0f, false)
 
     class Falldown(delay: Float) : AnimationType(delay, false)
+    
+    class Fallup(delay: Float) : AnimationType(delay, false)
 
     class Sidewipe(delay: Float) : AnimationType(delay, true)
 
