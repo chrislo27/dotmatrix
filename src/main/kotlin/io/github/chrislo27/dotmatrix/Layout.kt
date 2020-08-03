@@ -1,5 +1,6 @@
 package io.github.chrislo27.dotmatrix
 
+import java.awt.Color
 import java.awt.image.BufferedImage
 import java.awt.image.ImageObserver
 import kotlin.math.absoluteValue
@@ -7,6 +8,18 @@ import kotlin.math.roundToInt
 
 
 class GlyphRun(val font: DotMtxFont, val text: String) {
+    
+    companion object {
+        val customLines: Array<BufferedImage> by lazy {
+            Array(16) { i ->
+                BufferedImage(1, 4, BufferedImage.TYPE_4BYTE_ABGR).apply {
+                    for (y in 0 until 4) {
+                        setRGB(0, y, if ((i ushr y) and 1 == 1) Color.WHITE.rgb else 0)
+                    }
+                }
+            }
+        }
+    }
 
     val missingChars: Set<Char> = mutableSetOf()
     val glyphPositions: List<GlyphPosition>
@@ -20,19 +33,27 @@ class GlyphRun(val font: DotMtxFont, val text: String) {
         var currentX = 0
         var lastAdv = 0
         var hairSpaces = 0
+        var customY = 0
         glyphPositions = text.mapNotNull { c ->
             val glyph = font.glyphs[c]
             if (c == '\u200A') {
                 // Hair space -- advances by one pixel only
                 currentX++
                 lastAdv = 1
-                hairSpaces++
+                if (customY == 0) hairSpaces++
+                customY = 0
                 null
             } else if (c == '\u0015') {
                 // Negative-ack -- advances by negative one pixel only
                 currentX--
                 lastAdv--
                 null
+            } else if (c in '\uE000'..'\uE00F') {
+                // These are the first 16 Unicode Private Use Area characters. It represents a 4 bit pattern of on/off
+                // pixels going down
+                customY += 4
+                lastAdv = 0
+                GlyphPosition(Glyph(c, 0, 0, 0, 0, 0), currentX, customY - 4)
             } else if (glyph == null) {
                 missingChars.add(c)
                 null
@@ -53,7 +74,8 @@ class GlyphRun(val font: DotMtxFont, val text: String) {
             val g = createGraphics()
             glyphPositions.forEach { glyphPos ->
                 val glyph = glyphPos.glyph
-                val subimage = subimageCache.getOrPut(glyph) {
+                val c = glyph.character
+                val subimage = if (c in '\uE000'..'\uE00F') (customLines[c - '\uE000']) else subimageCache.getOrPut(glyph) {
                     font.image.getSubimage(glyph.x, glyph.y, glyph.w, glyph.h)
                 }
                 g.drawImage(subimage, glyphPos.x, glyphPos.y, null as ImageObserver?)
