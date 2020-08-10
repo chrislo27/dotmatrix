@@ -89,13 +89,12 @@ open class DestSign(val width: Int, val height: Int,
     }
 
     fun generateImageForState(state: Int): BufferedImage {
-        return generateImageForMatrix(generateMatrixForState(state).changeToColor(ledColor))
+        return generateImageForMatrix(generateMatrixForState(state))
     }
 
     fun generateImageForFrame(destination: Destination, destFrame: DestinationFrame): BufferedImage {
         return generateImageForMatrix(destination.generateMatrix(this.width, this.height, destFrame).apply {
             afterMatrixGenerated(this)
-            changeToColor(ledColor)
         })
     }
 
@@ -215,7 +214,6 @@ open class DestSign(val width: Int, val height: Int,
                             }
                         }
                         afterMatrixGenerated(mtx)
-                        mtx.changeToColor(ledColor)
                         framesList += generateImageForMatrix(mtx) to ms
                     }
                 }
@@ -242,23 +240,6 @@ open class DestSign(val width: Int, val height: Int,
     fun generateGif(file: File) {
         file.createNewFile()
         generateGif(file.outputStream())
-    }
-
-    // TODO remove
-    private fun BufferedImage.changeToColor(color: Color): BufferedImage {
-//        val rgbMask: Int = 0x00ffffff
-//        val replaceRGB: Int = 0x00ffffff // white
-//        val toggleRGB = replaceRGB xor (color.red shl 16 or (color.green shl 8) or color.blue)
-//        val w: Int = width
-//        val h: Int = height
-//        val rgb: IntArray = getRGB(0, 0, w, h, null, 0, w)
-//        for (i in rgb.indices) {
-//            if (rgb[i] and rgbMask == replaceRGB) {
-//                rgb[i] = rgb[i] xor toggleRGB
-//            }
-//        }
-//        setRGB(0, 0, w, h, rgb, 0, w)
-        return this
     }
 
     private fun Image.toBufferedImage(): BufferedImage {

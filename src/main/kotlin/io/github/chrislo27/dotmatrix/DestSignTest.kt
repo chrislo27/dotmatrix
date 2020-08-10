@@ -68,14 +68,14 @@ object DestSignTest {
 //        )
         sign.destination = Destination(
             LayoutLines(listOf(
-                GlyphLayout(listOf(GlyphRun(fonts.getValue("16d"), "410")), VerticalAlignment.CENTRE, TextAlignment.CENTRE)
+                GlyphLayout(listOf(GlyphRun(fonts.getValue("16d"), "410", DestSign.ORANGE)), VerticalAlignment.CENTRE, TextAlignment.CENTRE)
             ), LineSpacing.FLUSH_TO_EDGES),
             listOf(
                 DestinationFrame(listOf(
                     LayoutLines(listOf(
                         GlyphLayout(listOf(
-                            GlyphRun(fonts.getValue("15d"), "22"), GlyphRun(fonts.getValue("8d"), "ND"),
-                            GlyphRun(fonts.getValue("15d"), " ST STN")
+                            GlyphRun(fonts.getValue("15d"), "22", DestSign.ORANGE), GlyphRun(fonts.getValue("8d"), "ND", DestSign.ORANGE),
+                            GlyphRun(fonts.getValue("15d"), " ST STN", DestSign.ORANGE)
                         ), VerticalAlignment.TOP, TextAlignment.CENTRE)
                     ), LineSpacing.FLUSH_TO_EDGES)
                 ))
