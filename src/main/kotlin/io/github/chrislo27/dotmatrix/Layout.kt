@@ -7,16 +7,17 @@ import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
 
-class GlyphRun(val font: DotMtxFont, val text: String) {
+
+class GlyphRun(val font: DotMtxFont, val text: String, val color: Color/* = Color.WHITE*/) {
     
     companion object {
-        val customLines: Array<BufferedImage> by lazy {
+        val customLines: Array<SubimageCacheObj> by lazy {
             Array(16) { i ->
-                BufferedImage(1, 4, BufferedImage.TYPE_4BYTE_ABGR).apply {
+                SubimageCacheObj(BufferedImage(1, 4, BufferedImage.TYPE_4BYTE_ABGR).apply {
                     for (y in 0 until 4) {
                         setRGB(0, y, if ((i ushr y) and 1 == 1) Color.WHITE.rgb else 0)
                     }
-                }
+                }, 0x00FFFFFF)
             }
         }
     }
@@ -69,16 +70,11 @@ class GlyphRun(val font: DotMtxFont, val text: String) {
     }
 
     fun toBufferedImage(): BufferedImage {
-        val subimageCache: MutableMap<Glyph, BufferedImage> = mutableMapOf()
         return BufferedImage(width.coerceAtLeast(1), height, BufferedImage.TYPE_4BYTE_ABGR).apply {
             val g = createGraphics()
             glyphPositions.forEach { glyphPos ->
                 val glyph = glyphPos.glyph
-                val c = glyph.character
-                val subimage = if (c in '\uE000'..'\uE00F') (customLines[c - '\uE000']) else subimageCache.getOrPut(glyph) {
-                    font.image.getSubimage(glyph.x, glyph.y, glyph.w, glyph.h)
-                }
-                g.drawImage(subimage, glyphPos.x, glyphPos.y, null as ImageObserver?)
+                g.drawImage(font.getGlyphSubimage(glyph, color), glyphPos.x, glyphPos.y, null as ImageObserver?)
             }
             g.dispose()
         }
