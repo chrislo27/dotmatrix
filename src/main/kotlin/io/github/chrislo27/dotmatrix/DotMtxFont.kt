@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import java.awt.Color
 import java.awt.image.BufferedImage
-import java.io.File
 import java.io.InputStream
 import javax.imageio.ImageIO
 
@@ -62,7 +61,8 @@ class DotMtxFont(jsonStream: InputStream, imgStream: InputStream) {
 //            println("Replacing glyph '${c}' in font ${this.desc} because its color ${replaceRGB.toUInt().toString(16)} is not the wanted ${recolorRgb.toUInt().toString(16)}  [${glyph}]")
             val rgb: IntArray = subimage.image.getRGB(0, 0, w, h, null, 0, w)
             for (i in rgb.indices) {
-                if (rgb[i] and 0x00FFFFFF == replaceRGB) {
+                val px = rgb[i]
+                if (px and 0x00FFFFFF == replaceRGB && ((px shr 24) and 0xFF) == 0xFF) {
                     rgb[i] = recolorRgb
                 }
             }
