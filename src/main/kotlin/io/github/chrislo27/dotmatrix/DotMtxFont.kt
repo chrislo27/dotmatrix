@@ -29,7 +29,7 @@ class DotMtxFont(jsonStream: InputStream, imgStream: InputStream) {
         }.associateBy { it.character }
         allGlyphs = glyphs.values.toHashSet()
         val readImg = ImageIO.read(imgStream)
-        image = BufferedImage(readImg.width, readImg.height, BufferedImage.TYPE_4BYTE_ABGR).apply { 
+        image = BufferedImage(readImg.width, readImg.height, BufferedImage.TYPE_INT_ARGB).apply { 
             val g = createGraphics()
             g.drawImage(readImg, 0, 0, null)
             g.dispose()
