@@ -65,7 +65,7 @@ class GlyphRun(val font: DotMtxFont, val text: String, val color: Color/* = Colo
                 }
             }
         }
-        width = (((glyphPositions.map { it.x + it.glyph.w }.max() ?: 0) - (glyphPositions.map { it.x }.min() ?: 0)).absoluteValue + hairSpaces).coerceAtLeast(0)
+        width = (((glyphPositions.map { it.x + it.glyph.w }.maxOrNull() ?: 0) - (glyphPositions.map { it.x }.min() ?: 0)).absoluteValue + hairSpaces).coerceAtLeast(0)
         lastAdvance = lastAdv
     }
 
@@ -92,7 +92,7 @@ data class GlyphLayout(val runs: List<GlyphRun>, val glyphAlign: List<VerticalAl
     val width: Int = if (runs.isEmpty()) 0 else (runs.sumBy { r ->
         r.width + r.lastAdvance
     } - runs.last().lastAdvance)
-    val height: Int = runs.maxBy { it.height }?.height ?: 0
+    val height: Int = runs.maxByOrNull { it.height }?.height ?: 0
 
     fun toBufferedImage(): BufferedImage {
         if (width == 0 || height == 0) return BufferedImage(1, 1, BufferedImage.TYPE_4BYTE_ABGR)
@@ -116,7 +116,7 @@ data class GlyphLayout(val runs: List<GlyphRun>, val glyphAlign: List<VerticalAl
 
 data class LayoutLines(val lines: List<GlyphLayout>, val lineSpacing: LineSpacing = LineSpacing.FLUSH_TO_EDGES) {
 
-    val totalWidth: Int = lines.maxBy { it.width }?.width ?: 0
+    val totalWidth: Int = lines.maxByOrNull { it.width }?.width ?: 0
     val totalHeight: Int = lines.sumBy { it.height }
 
     fun toBufferedImage(width: Int, height: Int): BufferedImage {
