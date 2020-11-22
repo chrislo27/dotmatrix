@@ -3,7 +3,7 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.4.10'
 }
 
-group 'io.chrislo27'
+group 'io.chrislo27.dotmatrix'
 version '1.0'
 
 sourceCompatibility = 1.8
