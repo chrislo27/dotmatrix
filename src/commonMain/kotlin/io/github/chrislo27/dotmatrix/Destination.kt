@@ -3,7 +3,7 @@ package io.github.chrislo27.dotmatrix
 import io.github.chrislo27.dotmatrix.img.Image
 
 
-class Destination(
+data class Destination(
     val route: LayoutLines,
     val frames: List<DestinationFrame>,
     val screenTimes: List<Float> = emptyList(),
