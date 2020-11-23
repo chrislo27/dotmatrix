@@ -11,6 +11,7 @@ import java.awt.geom.Ellipse2D
 import java.awt.image.BufferedImage
 import java.awt.image.ImageObserver
 import java.io.ByteArrayOutputStream
+import java.io.OutputStream
 import kotlin.math.roundToInt
 
 actual fun DestSign.createLedSpacingGrid(): Image {
@@ -73,9 +74,8 @@ actual fun DestSign.generateImageForMatrix(matrixState: Image): Image {
     })
 }
 
-actual fun DestSign.generateGif(): ByteArray {
+fun DestSign.generateGif(os: OutputStream) {
     val e: AnimatedGifEncoder = AnimatedGifEncoder()
-    val os: ByteArrayOutputStream = ByteArrayOutputStream()
     e.start(os)
     e.setSize(outputWidth, outputHeight)
     e.setRepeat(0)
@@ -86,6 +86,11 @@ actual fun DestSign.generateGif(): ByteArray {
     }
     e.finish()
     os.close()
+}
+
+actual fun DestSign.generateGif(): ByteArray {
+    val os: ByteArrayOutputStream = ByteArrayOutputStream()
+    this.generateGif(os)
     return os.toByteArray()
 }
 
