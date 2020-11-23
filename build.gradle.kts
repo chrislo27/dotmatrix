@@ -15,7 +15,6 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
                 implementation("com.madgag:animated-gif-lib:1.4")
-                implementation("com.fasterxml.jackson.core:jackson-databind:2.10.1")
             }
             kotlinOptions.jvmTarget = "1.8"
         }
