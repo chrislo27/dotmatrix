@@ -1,20 +1,20 @@
 package io.github.chrislo27.dotmatrix
 
+import io.github.chrislo27.dotmatrix.img.Image
+import io.github.chrislo27.dotmatrix.*
 import java.awt.image.BufferedImage
 import java.awt.image.ImageObserver
 
-
-data class Destination(val route: LayoutLines, val frames: List<DestinationFrame>,
-                       val screenTimes: List<Float> = emptyList(),
-                       val routeAlignment: TextAlignment = TextAlignment.LEFT) {
-    
-    fun generateMatrix(width: Int, height: Int, frame: DestinationFrame, drawRoute: Boolean = true): BufferedImage {
+actual data class Destination actual constructor(actual val route: LayoutLines, actual val frames: List<DestinationFrame>,
+                                                 actual val screenTimes: List<Float>,
+                                                 actual val routeAlignment: TextAlignment) {
+    actual fun generateMatrix(width: Int, height: Int, frame: DestinationFrame, drawRoute: Boolean): Image {
         if (routeAlignment == TextAlignment.CENTRE) error("Route alignment cannot be centre")
-        return BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR).apply {
+        return Image(BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR).apply {
             val g = createGraphics()
             val hasRoute = route.lines.isNotEmpty() && route.totalWidth > 0
             if (hasRoute && drawRoute) {
-                val routeImg = route.toBufferedImage(route.totalWidth, height)
+                val routeImg = route.toImage(route.totalWidth, height).backing
                 g.drawImage(routeImg, if (routeAlignment == TextAlignment.RIGHT) (this.width - routeImg.width) else 0, 0, null as ImageObserver?)
             }
             val destWidth = if (hasRoute) (width - route.totalWidth) else width
@@ -26,18 +26,12 @@ data class Destination(val route: LayoutLines, val frames: List<DestinationFrame
             })
             frame.layoutLines.forEach { ll ->
                 if (ll.totalWidth > 0) {
-                    g.drawImage(ll.toBufferedImage(ll.totalWidth, height), x, 0, null)
+                    g.drawImage(ll.toImage(ll.totalWidth, height).backing, x, 0, null)
                 }
                 x += ll.totalWidth + frame.spacingBetweenLayouts
             }
 
             g.dispose()
-        }
+        })
     }
-}
-
-data class DestinationFrame(val layoutLines: List<LayoutLines>,
-                            val alignment: TextAlignment = TextAlignment.CENTRE, val screenTime: Float = -1f,
-                            val spacingBetweenLayouts: Int = 2, val animation: AnimationType = AnimationType.Inherit) {
-    val totalWidth: Int = layoutLines.sumBy { it.totalWidth } + (layoutLines.size - 1).coerceAtLeast(0) * spacingBetweenLayouts
 }
