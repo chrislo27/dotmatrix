@@ -1,8 +1,9 @@
 plugins {
     kotlin("multiplatform") version "1.4.10"
     kotlin("plugin.serialization") version "1.4.10"
+    id("maven-publish")
 }
-group = "io.chrislo27.dotmatrix"
+group = "io.github.chrislo27"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -13,7 +14,7 @@ kotlin {
         compilations.all {
             dependencies {
                 implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-                implementation("com.madgag:animated-gif-lib:+")
+                implementation("com.madgag:animated-gif-lib:1.4")
                 implementation("com.fasterxml.jackson.core:jackson-databind:2.10.1")
             }
             kotlinOptions.jvmTarget = "1.8"
