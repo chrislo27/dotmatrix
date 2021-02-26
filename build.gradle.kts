@@ -24,6 +24,11 @@ kotlin {
         browser {
 
         }
+//        nodejs { 
+//            dependencies {
+//                npm("canvas", "2.6.1")
+//            }
+//        }
     }
     sourceSets {
         val commonMain by getting {
