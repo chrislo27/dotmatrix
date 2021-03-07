@@ -49,6 +49,12 @@ open class DestSign(val width: Int, val height: Int,
         }
     }
 
+    /**
+     * Shortcut for
+     * ```
+     * generateImageForMatrix(generateMatrixForState(state))
+     * ```
+     */
     fun generateImageForState(state: Int): Image {
         return generateImageForMatrix(generateMatrixForState(state))
     }

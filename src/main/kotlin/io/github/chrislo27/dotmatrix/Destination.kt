@@ -22,17 +22,25 @@ data class Destination(
             }
             val destWidth = if (hasRoute) (width - route.totalWidth) else width
 
-            var x = (if (routeAlignment == TextAlignment.RIGHT) 0 else route.totalWidth) + (when (frame.alignment) {
+//            var x = (if (routeAlignment == TextAlignment.RIGHT) 0 else route.totalWidth) + (when (frame.alignment) {
+//                TextAlignment.CENTRE -> (destWidth - frame.totalWidth) / 2
+//                TextAlignment.LEFT -> 0
+//                TextAlignment.RIGHT -> destWidth - frame.totalWidth
+//            })
+//            frame.layoutLines.forEach { ll ->
+//                if (ll.totalWidth > 0) {
+//                    g.drawImage(ll.toImage(ll.totalWidth, height).backing, x, 0, null)
+//                }
+//                x += ll.totalWidth + frame.spacingBetweenLayouts
+//            }
+
+            val frameOffsetX = (if (routeAlignment == TextAlignment.RIGHT) 0 else route.totalWidth) + (when (frame.alignment) {
                 TextAlignment.CENTRE -> (destWidth - frame.totalWidth) / 2
                 TextAlignment.LEFT -> 0
                 TextAlignment.RIGHT -> destWidth - frame.totalWidth
             })
-            frame.layoutLines.forEach { ll ->
-                if (ll.totalWidth > 0) {
-                    g.drawImage(ll.toImage(ll.totalWidth, height).backing, x, 0, null)
-                }
-                x += ll.totalWidth + frame.spacingBetweenLayouts
-            }
+            val frameImage: Image = frame.toImage(height)
+            g.drawImage(frameImage.backing, frameOffsetX, 0, null as ImageObserver?)
 
             g.dispose()
         })
@@ -41,7 +49,25 @@ data class Destination(
 
 data class DestinationFrame(val layoutLines: List<LayoutLines>,
                             val alignment: TextAlignment = TextAlignment.CENTRE, val screenTime: Float = -1f,
-                            val spacingBetweenLayouts: Int = 2, val animation: AnimationType = AnimationType.Inherit) {
+                            val spacingBetweenLayouts: Int = 2, val animation: AnimationType = AnimationType.Inherit,
+                            val hscroll: Float = 0f
+) {
     
     val totalWidth: Int = layoutLines.sumBy { it.totalWidth } + (layoutLines.size - 1).coerceAtLeast(0) * spacingBetweenLayouts
+    
+    fun toImage(height: Int): Image {
+        return Image(BufferedImage(totalWidth, height, BufferedImage.TYPE_4BYTE_ABGR).apply {
+            val g = createGraphics()
+
+            var x = 0
+            layoutLines.forEach { ll ->
+                if (ll.totalWidth > 0) {
+                    g.drawImage(ll.toImage(ll.totalWidth, height).backing, x, 0, null)
+                }
+                x += ll.totalWidth + spacingBetweenLayouts
+            }
+            
+            g.dispose()
+        })
+    }
 }
