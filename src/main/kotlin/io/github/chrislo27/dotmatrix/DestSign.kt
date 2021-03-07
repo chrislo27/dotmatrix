@@ -38,6 +38,14 @@ open class DestSign(val width: Int, val height: Int,
         this.createLedSpacingGrid()
     }
 
+    fun getAllFrames(): List<DestinationFrame> = (destination?.frames ?: emptyList()) + (pr?.frames ?: emptyList())
+    
+    fun isAnimated(): Boolean {
+        val allFrames = getAllFrames()
+        val size = allFrames.size
+        return size >= 2 || (allFrames.first().hscroll !is FrameHScroll.NoScroll)
+    }
+    
     fun generateMatrixForState(state: Int): Image {
         if (state !in 0 until stateCount)
             error("State ($state) is out of bounds (max $stateCount)")
@@ -135,9 +143,9 @@ open class DestSign(val width: Int, val height: Int,
         val numDestFrames = destination?.frames?.size ?: 0
         val framesList = mutableListOf<AnimatedFrame>()
 
-        data class StateImage(val dest: Destination, val frame: DestinationFrame, val img: Image,
-                              val stateTime: Float)
+        data class StateImage(val dest: Destination, val frame: DestinationFrame, val img: Image, val stateTime: Float)
 
+        var totalFrameTime: Float = 0f
         val stateImages: List<StateImage> = (0 until stateCount).map { state ->
             val onPr = state >= numDestFrames
             val currentDest = (if (onPr) pr else destination)!!
@@ -148,7 +156,9 @@ open class DestSign(val width: Int, val height: Int,
         val allNoAnimation = listOfNotNull(destination, pr).all { it.frames.all { f -> getInheritedAnimation(f) == AnimationType.NoAnimation } }
         if (allNoAnimation || stateCount == 1) {
             for (i in 0 until stateCount) {
-                framesList += AnimatedFrame(stateImages[i].img, (stateImages[i].stateTime * 1000f).roundToInt())
+                val currentFrameTime = (stateImages[i].stateTime * 1000f).roundToInt()
+                framesList += AnimatedFrame(stateImages[i].img, currentFrameTime)
+                totalFrameTime += currentFrameTime
             }
         } else {
             // Interpolation
@@ -162,12 +172,15 @@ open class DestSign(val width: Int, val height: Int,
                 val nextFrame: DestinationFrame = stateImages[nextIndex].frame
                 val ani = getInheritedAnimation(prevFrame)
                 var stillFrameDelay = (stateImages[i].stateTime * 1000f).roundToInt()
+                
                 if (ani.delay <= 0f && stillFrameDelay <= 0) {
                     stillFrameDelay = (1000f / maxScrollFramerate).roundToInt()
                 }
                 if (stillFrameDelay > 0f) {
                     framesList += AnimatedFrame(stateImages[i].img, stillFrameDelay)
+                    totalFrameTime += stillFrameDelay
                 }
+                
                 if (ani.delay > 0f) {
                     val framerate = maxScrollFramerate
                     val keepRouteNum = prevDest === nextDest && prevDest.route.totalWidth > 0
@@ -243,6 +256,7 @@ open class DestSign(val width: Int, val height: Int,
                         }
                         afterMatrixGenerated(mtx)
                         framesList += AnimatedFrame(generateImageForMatrix(mtx), ms)
+                        totalFrameTime += ms
                     }
                 }
             }
