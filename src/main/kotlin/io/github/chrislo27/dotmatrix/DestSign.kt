@@ -46,13 +46,13 @@ open class DestSign(val width: Int, val height: Int,
         return size >= 2 || (allFrames.first().hscroll !is FrameHScroll.NoScroll)
     }
     
-    fun generateMatrixForState(state: Int, secondsRendered: Float): Image {
+    fun generateMatrixForState(state: Int): Image {
         if (state !in 0 until stateCount)
             error("State ($state) is out of bounds (max $stateCount)")
         val numDestFrames = destination?.frames?.size ?: 0
         val onPr = state >= numDestFrames
         val currentDest = (if (onPr) pr else destination)!!
-        return currentDest.generateMatrix(this.width, this.height, currentDest.frames[if (onPr) (state - numDestFrames) else state], secondsRendered).apply {
+        return currentDest.generateMatrix(this.width, this.height, currentDest.frames[if (onPr) (state - numDestFrames) else state]).apply {
             afterMatrixGenerated(this)
         }
     }
@@ -63,12 +63,12 @@ open class DestSign(val width: Int, val height: Int,
      * generateImageForMatrix(generateMatrixForState(state))
      * ```
      */
-    fun generateImageForState(state: Int, secondsRendered: Float = 0f): Image {
-        return generateImageForMatrix(generateMatrixForState(state, secondsRendered))
+    fun generateImageForState(state: Int): Image {
+        return generateImageForMatrix(generateMatrixForState(state))
     }
 
-    fun generateImageForFrame(destination: Destination, destFrame: DestinationFrame, secondsRendered: Float): Image {
-        return generateImageForMatrix(destination.generateMatrix(this.width, this.height, destFrame, secondsRendered).apply {
+    fun generateImageForFrame(destination: Destination, destFrame: DestinationFrame): Image {
+        return generateImageForMatrix(destination.generateMatrix(this.width, this.height, destFrame).apply {
             afterMatrixGenerated(this)
         })
     }
@@ -143,8 +143,7 @@ open class DestSign(val width: Int, val height: Int,
         val numDestFrames = destination?.frames?.size ?: 0
         val framesList = mutableListOf<AnimatedFrame>()
 
-        data class StateImage(val dest: Destination, val frame: DestinationFrame, val stateTime: Float, 
-                              val imgs: List<Pair<Image, Float>>/*, val img: Image*/)
+        data class StateImage(val dest: Destination, val frame: DestinationFrame, val img: Image, val stateTime: Float)
 
         var totalFrameTime: Float = 0f
         val stateImages: List<StateImage> = (0 until stateCount).map { state ->
@@ -152,25 +151,14 @@ open class DestSign(val width: Int, val height: Int,
             val currentDest = (if (onPr) pr else destination)!!
             val index = if (onPr) (state - numDestFrames) else state
             val currentFrame = currentDest.frames[index]
-            val stateTime =
-                currentDest.screenTimes.getOrElse(index) { scrollTime }.let { if (it <= 0f) scrollTime else it }
-            val numFrames = (stateTime * maxScrollFramerate).roundToInt().coerceAtLeast(1)
-            val imgs: List<Pair<Image, Float>> = (0 until numFrames).map { frame ->
-                val cumulativeTime = stateTime * frame / numFrames
-                generateImageForFrame(currentDest, currentFrame, cumulativeTime) to (stateTime / numFrames)
-            }
-            StateImage(currentDest, currentFrame, stateTime, imgs)
+            StateImage(currentDest, currentFrame, generateImageForFrame(currentDest, currentFrame), currentDest.screenTimes.getOrElse(index) { scrollTime }.let { if (it <= 0f) scrollTime else it })
         }
         val allNoAnimation = listOfNotNull(destination, pr).all { it.frames.all { f -> getInheritedAnimation(f) == AnimationType.NoAnimation } }
-        
         if (allNoAnimation || stateCount == 1) {
             for (i in 0 until stateCount) {
-                val stateImage = stateImages[i]
-                stateImage.imgs.forEachIndexed { index, (img, imgTime) ->
-                    val currentFrameTime = (imgTime * 1000f).roundToInt()
-                    framesList += AnimatedFrame(img, currentFrameTime)
-                    totalFrameTime += currentFrameTime
-                }
+                val currentFrameTime = (stateImages[i].stateTime * 1000f).roundToInt()
+                framesList += AnimatedFrame(stateImages[i].img, currentFrameTime)
+                totalFrameTime += currentFrameTime
             }
         } else {
             // Interpolation
@@ -189,20 +177,20 @@ open class DestSign(val width: Int, val height: Int,
                     stillFrameDelay = (1000f / maxScrollFramerate).roundToInt()
                 }
                 if (stillFrameDelay > 0f) {
-                    framesList += AnimatedFrame(stateImages[i].imgs.last().first, stillFrameDelay)
+                    framesList += AnimatedFrame(stateImages[i].img, stillFrameDelay)
                     totalFrameTime += stillFrameDelay
                 }
                 
                 if (ani.delay > 0f) {
                     val framerate = maxScrollFramerate
                     val keepRouteNum = prevDest === nextDest && prevDest.route.totalWidth > 0
-                    var prevMtx: Image = prevDest.generateMatrix(this.width, this.height, prevFrame, totalFrameTime, true)
-                    var nextMtx: Image = nextDest.generateMatrix(this.width, this.height, nextFrame, 0f, true)
+                    var prevMtx: Image = prevDest.generateMatrix(this.width, this.height, prevFrame, false)
+                    var nextMtx: Image = nextDest.generateMatrix(this.width, this.height, nextFrame, false)
                     val routeNumImg: BufferedImage? = if (keepRouteNum) prevMtx.backing.getSubimage(if (prevDest.routeAlignment == TextAlignment.RIGHT) (mtx.width - prevDest.route.totalWidth) else 0, 0, prevDest.route.totalWidth, prevMtx.height) else null
                     val numFrames: Int = (framerate * ani.delay).roundToInt()
                     if (ani is AnimationType.HorizontalScroll) {
-                        prevMtx = prevDest.generateMatrix(this.width, this.height, prevFrame, totalFrameTime, false)
-                        nextMtx = nextDest.generateMatrix(this.width, this.height, nextFrame, 0f, false)
+                        prevMtx = prevDest.generateMatrix(this.width, this.height, prevFrame, false)
+                        nextMtx = nextDest.generateMatrix(this.width, this.height, nextFrame, false)
                     }
                     for (f in 0 until numFrames) {
                         val progress = f / numFrames.toFloat()
