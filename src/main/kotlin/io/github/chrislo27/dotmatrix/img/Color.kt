@@ -1,6 +1,9 @@
 package io.github.chrislo27.dotmatrix.img
 
 
+/**
+ * A simple RGBA8888 class.
+ */
 class Color(val r: Int, val g: Int, val b: Int, val a: Int = 255) {
     
     companion object {

@@ -1,18 +1,37 @@
 package io.github.chrislo27.dotmatrix
 
 
-sealed class AnimationType(val delay: Float, val wide: Boolean) {
+/**
+ * This class indicates the transitional animation between frames.
+ */
+sealed class AnimationType(val delay: Float) {
 
-    object Inherit : AnimationType(0f, false)
+    /**
+     * Indicates that the animation should inherit the animation type from its parent.
+     */
+    object Inherit : AnimationType(0f)
 
-    object NoAnimation : AnimationType(0f, false)
+    /**
+     * Indicates that there is no animation.
+     */
+    object NoAnimation : AnimationType(0f)
 
-    class Falldown(delay: Float) : AnimationType(delay, false)
-    
-    class Fallup(delay: Float) : AnimationType(delay, false)
+    /**
+     * This animation has the next frame sliding from the top, displacing the previous frame.
+     */
+    class Falldown(delay: Float) : AnimationType(delay)
 
-    class Sidewipe(delay: Float) : AnimationType(delay, true)
+    /**
+     * This animation has the next frame sliding from the bottom, displacing the previous frame.
+     */
+    class Fallup(delay: Float) : AnimationType(delay)
 
-    class HorizontalScroll(delay: Float) : AnimationType(delay, true)
+    /**
+     * This animation has the next frame appearing left-to-right, like a flipdot display.
+     */
+    class Sidewipe(delay: Float) : AnimationType(delay)
+
+    @Deprecated("Replaced with native hscroll")
+    class HorizontalScroll(delay: Float) : AnimationType(delay)
 
 }

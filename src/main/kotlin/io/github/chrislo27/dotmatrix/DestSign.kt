@@ -19,7 +19,7 @@ data class AnimatedFrame(val image: Image, val ms: Int)
 
 open class DestSign(val width: Int, val height: Int,
                     val ledSize: Int = 3, val ledSpacing: Int = 1, val borderSize: Int = 4,
-                    val ledColor: Color = ORANGE, val offColor: Color = DARK_GREY, val borderColor: Color = Color.BLACK,
+                    val offColor: Color = DARK_GREY, val borderColor: Color = Color.BLACK,
                     val scrollTime: Float = 1.75f, defaultAnimation: AnimationType = AnimationType.NoAnimation,
                     val circles: Boolean = false, val maxScrollFramerate: Int = 30) {
 
