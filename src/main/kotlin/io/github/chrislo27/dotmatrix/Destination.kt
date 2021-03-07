@@ -11,7 +11,7 @@ data class Destination(
     val screenTimes: List<Float> = emptyList(),
     val routeAlignment: TextAlignment = TextAlignment.LEFT
 ) {
-    fun generateMatrix(width: Int, height: Int, frame: DestinationFrame, secondsRendered: Float, drawRoute: Boolean = true): Image {
+    fun generateMatrix(width: Int, height: Int, frame: DestinationFrame, drawRoute: Boolean = true): Image {
         if (routeAlignment == TextAlignment.CENTRE) error("Route alignment cannot be centre")
         return Image(BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR).apply {
             val g = createGraphics()
@@ -29,8 +29,6 @@ data class Destination(
             })
             val frameImage: Image = frame.toImage(height)
             g.setClip((if (routeAlignment == TextAlignment.RIGHT) 0 else route.totalWidth), 0, destWidth, height)
-            
-            // TODO compute correct X based on HScroll
             g.drawImage(frameImage.backing, frameOffsetX, 0, null as ImageObserver?)
             
             g.dispose()
