@@ -28,7 +28,7 @@ data class Destination(
                 TextAlignment.RIGHT -> destWidth - frame.totalWidth
             })
             val frameImage: Image = frame.toImage(height)
-            g.setClip(frameOffsetX, 0, destWidth, height)
+            g.setClip((if (routeAlignment == TextAlignment.RIGHT) 0 else route.totalWidth), 0, destWidth, height)
             g.drawImage(frameImage.backing, frameOffsetX, 0, null as ImageObserver?)
             
             g.dispose()
