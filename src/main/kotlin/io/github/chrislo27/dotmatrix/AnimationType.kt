@@ -31,7 +31,6 @@ sealed class AnimationType(val delay: Float) {
      */
     class Sidewipe(delay: Float) : AnimationType(delay)
 
-    @Deprecated("Replaced with native hscroll")
     class HorizontalScroll(delay: Float) : AnimationType(delay)
 
 }

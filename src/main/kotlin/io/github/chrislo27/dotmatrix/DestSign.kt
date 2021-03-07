@@ -131,26 +131,6 @@ open class DestSign(val width: Int, val height: Int,
         })
     }
     
-    fun generateGif(os: OutputStream) {
-        val e: AnimatedGifEncoder = AnimatedGifEncoder()
-        e.start(os)
-        e.setSize(outputWidth, outputHeight)
-        e.setRepeat(0)
-        val frames = generateAnimatedFrames()
-        frames.forEach { (img, ms) ->
-            e.setDelay(ms)
-            e.addFrame(img.backing)
-        }
-        e.finish()
-        os.close()
-    }
-    
-    fun generateGif(): ByteArray {
-        val os: ByteArrayOutputStream = ByteArrayOutputStream()
-        this.generateGif(os)
-        return os.toByteArray()
-    }
-    
     fun generateAnimatedFrames(): List<AnimatedFrame> {
         val numDestFrames = destination?.frames?.size ?: 0
         val framesList = mutableListOf<AnimatedFrame>()
@@ -269,6 +249,26 @@ open class DestSign(val width: Int, val height: Int,
             g.dispose()
         }
         return framesList
+    }
+
+    fun generateGif(os: OutputStream) {
+        val e: AnimatedGifEncoder = AnimatedGifEncoder()
+        e.start(os)
+        e.setSize(outputWidth, outputHeight)
+        e.setRepeat(0)
+        val frames = generateAnimatedFrames()
+        frames.forEach { (img, ms) ->
+            e.setDelay(ms)
+            e.addFrame(img.backing)
+        }
+        e.finish()
+        os.close()
+    }
+
+    fun generateGif(): ByteArray {
+        val os: ByteArrayOutputStream = ByteArrayOutputStream()
+        this.generateGif(os)
+        return os.toByteArray()
     }
     
 }
