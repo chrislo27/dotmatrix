@@ -184,8 +184,8 @@ open class DestSign(val width: Int, val height: Int,
                 if (ani.delay > 0f) {
                     val framerate = maxScrollFramerate
                     val keepRouteNum = prevDest === nextDest && prevDest.route.totalWidth > 0
-                    var prevMtx: Image = prevDest.generateMatrix(this.width, this.height, prevFrame, false)
-                    var nextMtx: Image = nextDest.generateMatrix(this.width, this.height, nextFrame, false)
+                    var prevMtx: Image = prevDest.generateMatrix(this.width, this.height, prevFrame, true)
+                    var nextMtx: Image = nextDest.generateMatrix(this.width, this.height, nextFrame, true)
                     val routeNumImg: BufferedImage? = if (keepRouteNum) prevMtx.backing.getSubimage(if (prevDest.routeAlignment == TextAlignment.RIGHT) (mtx.width - prevDest.route.totalWidth) else 0, 0, prevDest.route.totalWidth, prevMtx.height) else null
                     val numFrames: Int = (framerate * ani.delay).roundToInt()
                     if (ani is AnimationType.HorizontalScroll) {
