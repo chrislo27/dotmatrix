@@ -85,7 +85,7 @@ data class GlyphLayout(val runs: List<GlyphRun>, val glyphAlign: List<VerticalAl
     constructor(runs: List<GlyphRun>, glyphAlign: VerticalAlignment = VerticalAlignment.BOTTOM, horizontalAlign: TextAlignment = TextAlignment.CENTRE)
             : this(runs, if (runs.isEmpty()) emptyList() else List(runs.size) { glyphAlign }, horizontalAlign)
 
-    val width: Int = if (runs.isEmpty()) 0 else (runs.sumBy { r ->
+    val width: Int = if (runs.isEmpty()) 0 else (runs.sumOf { r ->
         r.width + r.lastAdvance
     } - runs.last().lastAdvance)
     val height: Int = runs.maxByOrNull { it.height }?.height ?: 0
@@ -113,7 +113,7 @@ data class GlyphLayout(val runs: List<GlyphRun>, val glyphAlign: List<VerticalAl
 data class LayoutLines(val lines: List<GlyphLayout>, val lineSpacing: LineSpacing = LineSpacing.FLUSH_TO_EDGES) {
 
     val totalWidth: Int = lines.maxByOrNull { it.width }?.width ?: 0
-    val totalHeight: Int = lines.sumBy { it.height }
+    val totalHeight: Int = lines.sumOf { it.height }
     
     fun determineLayoutX(imageWidth: Int, layout: GlyphLayout): Int {
         return when (layout.horizontalAlign) {
