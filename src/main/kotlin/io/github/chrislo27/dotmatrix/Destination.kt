@@ -42,7 +42,7 @@ data class DestinationFrame(val layoutLines: List<LayoutLines>,
                             val hscroll: FrameHScroll = FrameHScroll.NoScroll
 ) {
     
-    val totalWidth: Int = layoutLines.sumOf { it.totalWidth } + (layoutLines.size - 1).coerceAtLeast(0) * spacingBetweenLayouts
+    val totalWidth: Int = (layoutLines.sumOf { it.totalWidth } + (layoutLines.size - 1).coerceAtLeast(0) * spacingBetweenLayouts).coerceAtLeast(1)
     
     fun toImage(height: Int): Image {
         return Image(BufferedImage(totalWidth, height, BufferedImage.TYPE_4BYTE_ABGR).apply {
