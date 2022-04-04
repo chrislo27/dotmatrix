@@ -30,7 +30,7 @@ class GlyphRun(val font: DotMtxFont, val text: String, val color: Color) {
         val height = font.height
         var currentX = 0
         var lastAdv = 0
-        var hairSpaces = 0
+        var hairSpacesAtEnd = 0
         var customY = 0
         glyphPositions = text.mapNotNull { c ->
             val glyph = font.glyphs[c]
@@ -38,31 +38,34 @@ class GlyphRun(val font: DotMtxFont, val text: String, val color: Color) {
                 // Hair space -- advances by one pixel only
                 currentX++
                 lastAdv = 1
-                if (customY == 0) hairSpaces++
+                if (customY == 0) hairSpacesAtEnd++
                 customY = 0
                 null
-            } else if (c == '\u0015') {
-                // Negative-ack -- advances by negative one pixel only
-                currentX--
-                lastAdv--
-                null
-            } else if (c in '\uE000'..'\uE00F') {
-                // These are the first 16 Unicode Private Use Area characters. It represents a 4 bit pattern of on/off
-                // pixels going down
-                customY += 4
-                lastAdv = 0
-                GlyphPosition(Glyph(c, 0, 0, 0, 0, 0), currentX, customY - 4)
-            } else if (glyph == null) {
-                missingChars.add(c)
-                null
             } else {
-                GlyphPosition(glyph, currentX, height - glyph.h).apply {
-                    lastAdv = glyph.advance
-                    currentX += glyph.w + glyph.advance
+                hairSpacesAtEnd = 0
+                if (c == '\u0015') {
+                    // Negative-ack -- advances by negative one pixel only
+                    currentX--
+                    lastAdv--
+                    null
+                } else if (c in '\uE000'..'\uE00F') {
+                    // These are the first 16 Unicode Private Use Area characters. It represents a 4 bit pattern of on/off
+                    // pixels going down
+                    customY += 4
+                    lastAdv = 0
+                    GlyphPosition(Glyph(c, 0, 0, 0, 0, 0), currentX, customY - 4)
+                } else if (glyph == null) {
+                    missingChars.add(c)
+                    null
+                } else {
+                    GlyphPosition(glyph, currentX, height - glyph.h).apply {
+                        lastAdv = glyph.advance
+                        currentX += glyph.w + glyph.advance
+                    }
                 }
             }
         }
-        width = (((glyphPositions.map { it.x + it.glyph.w }.maxOrNull() ?: 0) - (glyphPositions.map { it.x }.minOrNull() ?: 0)).absoluteValue + hairSpaces).coerceAtLeast(0)
+        width = (((glyphPositions.maxOfOrNull { it.x + it.glyph.w } ?: 0) - (glyphPositions.minOfOrNull { it.x } ?: 0)).absoluteValue + hairSpacesAtEnd).coerceAtLeast(0)
         lastAdvance = lastAdv
     }
     

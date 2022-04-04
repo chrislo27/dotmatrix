@@ -77,17 +77,42 @@ object DestSignTest {
 //                ))
 //            )
 //        )
+//        sign.destination = Destination(
+//            LayoutLines(listOf(
+//                GlyphLayout(listOf(GlyphRun(fonts.getValue("16d"), "410", DestSign.ORANGE)), VerticalAlignment.CENTRE, TextAlignment.CENTRE)
+//            ), LineSpacing.FLUSH_TO_EDGES),
+//            listOf(
+//                DestinationFrame(listOf(
+//                    LayoutLines(listOf(
+//                        GlyphLayout(listOf(
+//                            GlyphRun(fonts.getValue("15d"), "22", DestSign.ORANGE), GlyphRun(fonts.getValue("8d"), "ND", DestSign.ORANGE),
+//                            GlyphRun(fonts.getValue("15d"), " ST STN", DestSign.ORANGE)
+//                        ), VerticalAlignment.TOP, TextAlignment.CENTRE)
+//                    ), LineSpacing.FLUSH_TO_EDGES)
+//                ))
+//            )
+//        )
         sign.destination = Destination(
             LayoutLines(listOf(
-                GlyphLayout(listOf(GlyphRun(fonts.getValue("16d"), "410", DestSign.ORANGE)), VerticalAlignment.CENTRE, TextAlignment.CENTRE)
+                GlyphLayout(listOf(GlyphRun(fonts.getValue("16t"), "555", DestSign.ORANGE)), VerticalAlignment.CENTRE, TextAlignment.CENTRE)
             ), LineSpacing.FLUSH_TO_EDGES),
             listOf(
                 DestinationFrame(listOf(
                     LayoutLines(listOf(
                         GlyphLayout(listOf(
-                            GlyphRun(fonts.getValue("15d"), "22", DestSign.ORANGE), GlyphRun(fonts.getValue("8d"), "ND", DestSign.ORANGE),
-                            GlyphRun(fonts.getValue("15d"), " ST STN", DestSign.ORANGE)
-                        ), VerticalAlignment.TOP, TextAlignment.CENTRE)
+                            GlyphRun(fonts.getValue("7d"), "PORT MANN EXP".let { orig ->
+                                var s = ""
+                                orig.dropLast(1).forEach { c ->
+                                    s += c
+                                    s += "\u200A"
+                                }
+                                s += orig.last()
+                                s
+                            }, DestSign.ORANGE)
+                        ), VerticalAlignment.TOP, TextAlignment.CENTRE),
+                        GlyphLayout(listOf(
+                            GlyphRun(fonts.getValue("7d"), "TO CARVOLTH EXCH", DestSign.ORANGE)
+                        ), VerticalAlignment.BOTTOM, TextAlignment.CENTRE),
                     ), LineSpacing.FLUSH_TO_EDGES)
                 ))
             )
