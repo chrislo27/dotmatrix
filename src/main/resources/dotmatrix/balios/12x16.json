@@ -2,7 +2,7 @@
   "height": 16,
   "img": "12x16.png",
   "desc": "12 wide, 16 tall, Balios",
-  "advance": 1,
+  "advance": 2,
   "glyphs": [
     {
       "char": "1",
