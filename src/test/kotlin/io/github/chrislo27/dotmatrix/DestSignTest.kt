@@ -1,5 +1,6 @@
 package io.github.chrislo27.dotmatrix
 
+import io.github.chrislo27.dotmatrix.img.Color
 import java.awt.Image
 import java.io.InputStream
 import java.net.URL
@@ -23,6 +24,47 @@ object DestSignTest {
     
     fun readClasspathResAsImage(path: String): io.github.chrislo27.dotmatrix.img.Image {
         return io.github.chrislo27.dotmatrix.img.Image(ImageIO.read(classpathResourceStream(path)))
+    }
+
+    /**
+     * Parses escape characters.
+     */
+    private fun parseDestSignEscapes(str: String): String {
+        val strb = StringBuilder()
+        var inEscape = false
+        var inGlyph = false
+        for (c in str) {
+            if (inGlyph) {
+                val hex: Int = (c.toString().toInt(16))
+                strb.append('\uE000' + hex)
+                inEscape = false
+                inGlyph = false
+            } else if (inEscape) {
+                when (c) {
+                    's' -> strb.append(' ')
+                    '\\' -> strb.append('\\')
+                    '1' -> strb.append('\u200A') // Hair space
+                    '~' -> strb.append('\u0015') // Negative-ack
+                    '!' -> strb.append('!')
+                    'g' -> {
+                        inGlyph = true
+                    }
+                    else -> error("Unknown escape \"\\$c\". Supported: s, \\, 1, ~, !, g")
+                }
+                inEscape = false
+            } else {
+                if (c == '\\') {
+                    inEscape = true
+                } else {
+                    strb.append(c)
+                }
+            }
+        }
+        if (inEscape) {
+            // Add backslash since the escape was malformed
+            strb.append('\\')
+        }
+        return strb.toString()
     }
 
     val fonts: Map<String, DotMtxFont> by lazy {
@@ -92,27 +134,47 @@ object DestSignTest {
 //                ))
 //            )
 //        )
+//        sign.destination = Destination(
+//            LayoutLines(listOf(
+//                GlyphLayout(listOf(GlyphRun(fonts.getValue("16t"), "555", DestSign.ORANGE)), VerticalAlignment.CENTRE, TextAlignment.CENTRE)
+//            ), LineSpacing.FLUSH_TO_EDGES),
+//            listOf(
+//                DestinationFrame(listOf(
+//                    LayoutLines(listOf(
+//                        GlyphLayout(listOf(
+//                            GlyphRun(fonts.getValue("7d"), "PORT MANN EXP".let { orig ->
+//                                var s = ""
+//                                orig.dropLast(1).forEach { c ->
+//                                    s += c
+//                                    s += "\u200A"
+//                                }
+//                                s += orig.last()
+//                                s
+//                            }, DestSign.ORANGE)
+//                        ), VerticalAlignment.TOP, TextAlignment.CENTRE),
+//                        GlyphLayout(listOf(
+//                            GlyphRun(fonts.getValue("7d"), "TO CARVOLTH EXCH", DestSign.ORANGE)
+//                        ), VerticalAlignment.BOTTOM, TextAlignment.CENTRE),
+//                    ), LineSpacing.FLUSH_TO_EDGES)
+//                ))
+//            )
+//        )
         sign.destination = Destination(
             LayoutLines(listOf(
-                GlyphLayout(listOf(GlyphRun(fonts.getValue("16t"), "555", DestSign.ORANGE)), VerticalAlignment.CENTRE, TextAlignment.CENTRE)
+                GlyphLayout(listOf(
+                    GlyphRun(fonts.getValue("16d"), parseDestSignEscapes("""\g0\gE\g7\g0\1
+\g8\gF\gF\g1\1\~""".replace("\n", "")), Color(255, 0, 0)).apply { 
+                                                              println("width: ${this.width}    ${this.lastAdvance}")
+                    },
+                    GlyphRun(fonts.getValue("16d"), "L", Color(0, 0, 0))
+                ), VerticalAlignment.CENTRE, TextAlignment.LEFT)
             ), LineSpacing.FLUSH_TO_EDGES),
             listOf(
                 DestinationFrame(listOf(
                     LayoutLines(listOf(
                         GlyphLayout(listOf(
-                            GlyphRun(fonts.getValue("7d"), "PORT MANN EXP".let { orig ->
-                                var s = ""
-                                orig.dropLast(1).forEach { c ->
-                                    s += c
-                                    s += "\u200A"
-                                }
-                                s += orig.last()
-                                s
-                            }, DestSign.ORANGE)
-                        ), VerticalAlignment.TOP, TextAlignment.CENTRE),
-                        GlyphLayout(listOf(
-                            GlyphRun(fonts.getValue("7d"), "TO CARVOLTH EXCH", DestSign.ORANGE)
-                        ), VerticalAlignment.BOTTOM, TextAlignment.CENTRE),
+                            GlyphRun(fonts.getValue("12d"), "SUNNYDALE", DestSign.ORANGE)
+                        )),
                     ), LineSpacing.FLUSH_TO_EDGES)
                 ))
             )
