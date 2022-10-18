@@ -53,7 +53,7 @@ class GlyphRun(val font: DotMtxFont, val text: String, val color: Color) {
                     // pixels going down
                     customY += 4
                     lastAdv = 0
-                    GlyphPosition(Glyph(c, 0, 0, 0, 0, 0), currentX, customY - 4)
+                    GlyphPosition(Glyph(c, 0, 0, 1, 0, 0), currentX, customY - 4)
                 } else if (glyph == null) {
                     missingChars.add(c)
                     null
