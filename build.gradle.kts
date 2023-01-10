@@ -3,7 +3,7 @@ plugins {
     `maven-publish`
 }
 group = "io.github.chrislo27"
-version = "3.2.2"
+version = "3.2.3"
 
 repositories {
     mavenCentral()

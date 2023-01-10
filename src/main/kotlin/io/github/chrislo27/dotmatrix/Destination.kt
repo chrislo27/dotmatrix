@@ -37,7 +37,7 @@ data class Destination(
 }
 
 data class DestinationFrame(val layoutLines: List<LayoutLines>,
-                            val alignment: TextAlignment = TextAlignment.CENTRE, val screenTime: Float = -1f,
+                            val alignment: TextAlignment = TextAlignment.CENTRE,
                             val spacingBetweenLayouts: Int = 2, val animation: AnimationType = AnimationType.Inherit,
                             val hscroll: FrameHScroll = FrameHScroll.NoScroll
 ) {
