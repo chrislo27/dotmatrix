@@ -3,12 +3,13 @@ plugins {
     `maven-publish`
 }
 group = "io.github.chrislo27"
-version = "3.3.1"
+version = "3.4.0"
 
 repositories {
     mavenCentral()
 }
 kotlin {
+    jvmToolchain(11)
     sourceSets {
         val main by getting {
             dependencies {
@@ -23,10 +24,6 @@ kotlin {
 publishing {
     publications {
         create<MavenPublication>("maven") {
-//            groupId = "org.gradle.sample"
-//            artifactId = "library"
-//            version = "1.1"
-
             from(components["kotlin"])
         }
     }
