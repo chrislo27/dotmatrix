@@ -10,7 +10,7 @@ import kotlin.math.roundToInt
 val glyphRunCustomLines: Array<SubimageCacheObj> by lazy {
     Array(16) { i ->
         SubimageCacheObj(Image(BufferedImage(1, 4, BufferedImage.TYPE_4BYTE_ABGR).apply {
-            for (y in 0 until 4) {
+            for (y in 0..<4) {
                 setRGB(0, y, if ((i ushr y) and 1 == 1) Color.WHITE.rgb else 0)
             }
         }), 0x00FFFFFF)

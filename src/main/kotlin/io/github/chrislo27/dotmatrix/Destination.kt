@@ -62,7 +62,7 @@ data class DestinationFrame(val layoutLines: List<LayoutLines>,
 }
 
 sealed class FrameHScroll {
-    object NoScroll : FrameHScroll()
+    data object NoScroll : FrameHScroll()
     
     class Scroll(val pixelsPerSecond: Float = 30f, val spacingPercentage: Float = 1f) : FrameHScroll()
 }

@@ -47,7 +47,7 @@ open class DestSign(val width: Int, val height: Int,
     }
     
     fun generateMatrixForState(state: Int): Image {
-        if (state !in 0 until stateCount)
+        if (state !in 0..<stateCount)
             error("State ($state) is out of bounds (max $stateCount)")
         val numDestFrames = destination?.frames?.size ?: 0
         val onPr = state >= numDestFrames
@@ -83,10 +83,10 @@ open class DestSign(val width: Int, val height: Int,
         return Image(BufferedImage(outputWidth, outputHeight, BufferedImage.TYPE_4BYTE_ABGR).apply {
             val g = createGraphics()
             g.color = java.awt.Color.BLACK
-            for (x in (borderSize + ledSize) until (width - borderSize) step (ledSize + ledSpacing)) {
+            for (x in (borderSize + ledSize)..<(width - borderSize) step (ledSize + ledSpacing)) {
                 g.fillRect(x, borderSize, ledSpacing, height - borderSize * 2)
             }
-            for (y in (borderSize + ledSize) until (height - borderSize) step (ledSize + ledSpacing)) {
+            for (y in (borderSize + ledSize)..<(height - borderSize) step (ledSize + ledSpacing)) {
                 g.fillRect(borderSize, y, width - borderSize * 2, ledSpacing)
             }
             if (circles && ledSize >= 4) {
@@ -98,8 +98,8 @@ open class DestSign(val width: Int, val height: Int,
                     })
                     gr.dispose()
                 }
-                for (x in 0 until width) {
-                    for (y in 0 until height) {
+                for (x in 0..<width) {
+                    for (y in 0..<height) {
                         g.drawImage(circleTemplate, borderSize + (ledSize + ledSpacing) * x, borderSize + (ledSize + ledSpacing) * y, null)
                     }
                 }
@@ -146,7 +146,7 @@ open class DestSign(val width: Int, val height: Int,
         data class StateImage(val dest: Destination, val frame: DestinationFrame, val img: Image, val stateTime: Float)
 
         var totalFrameTime: Float = 0f
-        val stateImages: List<StateImage> = (0 until stateCount).map { state ->
+        val stateImages: List<StateImage> = (0..<stateCount).map { state ->
             val onPr = state >= numDestFrames
             val currentDest = (if (onPr) pr else destination)!!
             val index = if (onPr) (state - numDestFrames) else state
@@ -155,7 +155,7 @@ open class DestSign(val width: Int, val height: Int,
         }
         val allNoAnimation = listOfNotNull(destination, pr).all { it.frames.all { f -> getInheritedAnimation(f) == AnimationType.NoAnimation } }
         if (allNoAnimation || stateCount == 1) {
-            for (i in 0 until stateCount) {
+            for (i in 0..<stateCount) {
                 val currentFrameTime = (stateImages[i].stateTime * 1000f).roundToInt()
                 framesList += AnimatedFrame(stateImages[i].img, currentFrameTime)
                 totalFrameTime += currentFrameTime
@@ -164,7 +164,7 @@ open class DestSign(val width: Int, val height: Int,
             // Interpolation
             val mtx: Image = Image(BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR))
             val g = mtx.backing.createGraphics()
-            for (i in 0 until stateCount) {
+            for (i in 0..<stateCount) {
                 val nextIndex = (i + 1) % stateImages.size
                 val prevDest: Destination = stateImages[i].dest
                 val nextDest: Destination = stateImages[nextIndex].dest
@@ -192,7 +192,7 @@ open class DestSign(val width: Int, val height: Int,
                         prevMtx = prevDest.generateMatrix(this.width, this.height, prevFrame, false)
                         nextMtx = nextDest.generateMatrix(this.width, this.height, nextFrame, false)
                     }
-                    for (f in 0 until numFrames) {
+                    for (f in 0..<numFrames) {
                         val progress = f / numFrames.toFloat()
                         val ms = ((1000f * ani.delay) / numFrames).roundToInt().coerceAtLeast(3)
                         g.composite = AlphaComposite.Clear

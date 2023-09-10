@@ -9,12 +9,12 @@ sealed class AnimationType(val delay: Float) {
     /**
      * Indicates that the animation should inherit the animation type from its parent.
      */
-    object Inherit : AnimationType(0f)
+    data object Inherit : AnimationType(0f)
 
     /**
      * Indicates that there is no animation.
      */
-    object NoAnimation : AnimationType(0f)
+    data object NoAnimation : AnimationType(0f)
 
     /**
      * This animation has the next frame sliding from the top, displacing the previous frame.
